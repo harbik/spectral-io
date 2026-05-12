@@ -1391,5 +1391,86 @@ mod tests {
         assert!(file.batch_metadata().is_none());
     }
 
+    #[test]
+    fn percent_scale_reflectance_above_one_is_ok() {
+        // scale="percent" means values are 0–100; the [0,1] bounds check must not fire.
+        let json = r#"{"schema_version":"1.0.0","file_type":"single","spectrum":{"id":"x",
+            "metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
+            "wavelength_axis":{"values_nm":[380,390,400]},
+            "spectral_data":{"values":[50.0,75.0,85.0],"scale":"percent"}}}"#;
+        assert!(SpectrumFile::from_str(json).is_ok());
+    }
+
+    #[test]
+    fn single_file_with_spectra_key_is_schema_error() {
+        let json = r#"{"schema_version":"1.0.0","file_type":"single",
+            "spectrum":{"id":"x","metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
+            "wavelength_axis":{"values_nm":[380,390]},"spectral_data":{"values":[0.1,0.2]}},
+            "spectra":[]}"#;
+        assert!(matches!(
+            SpectrumFile::from_str(json),
+            Err(SpectrumFileError::SchemaValidation(_))
+        ));
+    }
+
+    #[test]
+    fn empty_spectra_array_is_schema_error() {
+        let json = r#"{"schema_version":"1.0.0","file_type":"batch","spectra":[]}"#;
+        assert!(matches!(
+            SpectrumFile::from_str(json),
+            Err(SpectrumFileError::SchemaValidation(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_illuminant_is_schema_error() {
+        let json = r#"{"schema_version":"1.0.0","file_type":"single","spectrum":{"id":"x",
+            "metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
+            "wavelength_axis":{"values_nm":[380,390,400]},
+            "spectral_data":{"values":[0.1,0.2,0.3]},
+            "color_science":{"illuminant":"TL84"}}}"#;
+        assert!(matches!(
+            SpectrumFile::from_str(json),
+            Err(SpectrumFileError::SchemaValidation(_))
+        ));
+    }
+
+    #[test]
+    fn invalid_cie_observer_is_schema_error() {
+        let json = r#"{"schema_version":"1.0.0","file_type":"single","spectrum":{"id":"x",
+            "metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
+            "wavelength_axis":{"values_nm":[380,390,400]},
+            "spectral_data":{"values":[0.1,0.2,0.3]},
+            "color_science":{"cie_observer":"CIE 2006"}}}"#;
+        assert!(matches!(
+            SpectrumFile::from_str(json),
+            Err(SpectrumFileError::SchemaValidation(_))
+        ));
+    }
+
+    #[test]
+    fn values_nm_fewer_than_two_is_schema_error() {
+        let json = r#"{"schema_version":"1.0.0","file_type":"single","spectrum":{"id":"x",
+            "metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
+            "wavelength_axis":{"values_nm":[380]},
+            "spectral_data":{"values":[0.1]}}}"#;
+        assert!(matches!(
+            SpectrumFile::from_str(json),
+            Err(SpectrumFileError::SchemaValidation(_))
+        ));
+    }
+
+    #[test]
+    fn range_nm_non_positive_interval_is_schema_error() {
+        let json = r#"{"schema_version":"1.0.0","file_type":"single","spectrum":{"id":"x",
+            "metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
+            "wavelength_axis":{"range_nm":{"start":380,"end":780,"interval":0}},
+            "spectral_data":{"values":[0.1,0.2]}}}"#;
+        assert!(matches!(
+            SpectrumFile::from_str(json),
+            Err(SpectrumFileError::SchemaValidation(_))
+        ));
+    }
+
     // Conversion-to-Spectrum tests live in the colorimetry crate.
 }

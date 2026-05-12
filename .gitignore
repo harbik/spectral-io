@@ -1,4 +1,14 @@
 /target
 **/.DS_Store
 **/tmp
-/data/spectrashop
+/data/spectrashop/**
+!/data/spectrashop/monitors/
+!/data/spectrashop/monitors/Apple 13 inch.txt
+!/data/spectrashop/inks/
+!/data/spectrashop/inks/Coors thermochromic ink.txt
+!/data/spectrashop/charts/
+!/data/spectrashop/charts/ISCC-NBS Centroid Charts (5 samples).txt
+!/data/spectrashop/candies/
+!/data/spectrashop/candies/Black Ace Licorice.txt
+!/data/spectrashop/ceramics/
+!/data/spectrashop/ceramics/Wallace China.txt

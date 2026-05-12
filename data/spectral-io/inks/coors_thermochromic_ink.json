@@ -1,0 +1,172 @@
+{
+  "file_type": "batch",
+  "schema_version": "1.0.0",
+  "spectra": [
+    {
+      "id": "Ink at room temperature",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2009-12-28",
+        "title": "Ink at room temperature",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 4,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0
+        },
+        "surface": "Matte",
+        "sample_backing": "white",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "Coors",
+          "material": "Thermochromic ink",
+          "measurement_source": "A",
+          "prod_date": "2009"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.272575,
+          0.3238,
+          0.4617,
+          0.6097,
+          0.6789,
+          0.70845,
+          0.728175,
+          0.7474,
+          0.764175,
+          0.7744,
+          0.78335,
+          0.796725,
+          0.80555,
+          0.8061,
+          0.8016,
+          0.79275,
+          0.784025,
+          0.774075,
+          0.75615,
+          0.741375,
+          0.732125,
+          0.73675,
+          0.7507,
+          0.7734,
+          0.794975,
+          0.812825,
+          0.8285,
+          0.845,
+          0.859675,
+          0.86615,
+          0.870825,
+          0.8778,
+          0.883325,
+          0.886425,
+          0.88975,
+          0.894
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "Coors thermochromic ink.txt",
+        "source_format": "SpectraShop Text"
+      }
+    },
+    {
+      "id": "Ink cold",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2009-12-28",
+        "title": "Ink cold",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 4,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0
+        },
+        "surface": "Matte",
+        "sample_backing": "white",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "Coors",
+          "material": "Thermochromic ink",
+          "measurement_source": "A",
+          "prod_date": "2009"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.203425,
+          0.23835,
+          0.32825,
+          0.4289,
+          0.4965,
+          0.554,
+          0.60855,
+          0.6556,
+          0.68585,
+          0.693225,
+          0.67765,
+          0.643075,
+          0.588675,
+          0.52165,
+          0.4492,
+          0.376775,
+          0.314525,
+          0.26545,
+          0.22545,
+          0.195375,
+          0.1743,
+          0.166025,
+          0.172125,
+          0.195725,
+          0.24075,
+          0.310925,
+          0.4058,
+          0.51745,
+          0.6285,
+          0.71805,
+          0.78,
+          0.818,
+          0.83905,
+          0.8507,
+          0.857575,
+          0.86285
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "Coors thermochromic ink.txt",
+        "source_format": "SpectraShop Text"
+      }
+    }
+  ]
+}

@@ -1,0 +1,436 @@
+{
+  "file_type": "batch",
+  "schema_version": "1.0.0",
+  "spectra": [
+    {
+      "id": "2",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2006-04-17",
+        "title": "strong Pink",
+        "description": "Supplement to NBS Circular 553. Standard sample No. 2106.",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 1,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0,
+          "measurement_filter": "D65"
+        },
+        "surface": "Gloss",
+        "sample_backing": "Black",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "ISCC-NBS",
+          "material": "Paint",
+          "measurement_source": "D65",
+          "prod_date": "1964",
+          "sample_id3": "Red Pink"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.2916,
+          0.3271,
+          0.3387,
+          0.3428,
+          0.3399,
+          0.3379,
+          0.3359,
+          0.3338,
+          0.3301,
+          0.3234,
+          0.3142,
+          0.305,
+          0.2956,
+          0.2863,
+          0.279,
+          0.2761,
+          0.2788,
+          0.2859,
+          0.2979,
+          0.3287,
+          0.4324,
+          0.5817,
+          0.6934,
+          0.7689,
+          0.8153,
+          0.8379,
+          0.8505999,
+          0.8579,
+          0.8633,
+          0.8687,
+          0.8746,
+          0.8777,
+          0.8767999,
+          0.8745,
+          0.8673,
+          0.8515
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "ISCC-NBS Centroid Charts.txt",
+        "source_format": "SpectraShop Text"
+      }
+    },
+    {
+      "id": "3",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2006-04-17",
+        "title": "deep Pink",
+        "description": "Supplement to NBS Circular 553. Standard sample No. 2106.",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 1,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0,
+          "measurement_filter": "D65"
+        },
+        "surface": "Gloss",
+        "sample_backing": "Black",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "ISCC-NBS",
+          "material": "Paint",
+          "measurement_source": "D65",
+          "prod_date": "1964",
+          "sample_id3": "Red Pink"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.0716,
+          0.1171,
+          0.178,
+          0.2128,
+          0.2172,
+          0.2155,
+          0.2142,
+          0.2129,
+          0.2091,
+          0.2017,
+          0.1919,
+          0.1822,
+          0.1721,
+          0.1614,
+          0.1527,
+          0.15,
+          0.1526,
+          0.1559,
+          0.1607,
+          0.1815,
+          0.2794,
+          0.4639,
+          0.6372,
+          0.7392,
+          0.7829,
+          0.8005,
+          0.809,
+          0.8146999,
+          0.8199,
+          0.8255,
+          0.8304,
+          0.8329,
+          0.8336,
+          0.8336999,
+          0.8236,
+          0.7869
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "ISCC-NBS Centroid Charts.txt",
+        "source_format": "SpectraShop Text"
+      }
+    },
+    {
+      "id": "4",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2006-04-17",
+        "title": "light Pink",
+        "description": "Supplement to NBS Circular 553. Standard sample No. 2106.",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 1,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0,
+          "measurement_filter": "D65"
+        },
+        "surface": "Gloss",
+        "sample_backing": "Black",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "ISCC-NBS",
+          "material": "Paint",
+          "measurement_source": "D65",
+          "prod_date": "1964",
+          "sample_id3": "Red Pink"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.4697,
+          0.5692,
+          0.607,
+          0.6217999,
+          0.6206,
+          0.6188999,
+          0.6154,
+          0.6120999,
+          0.608,
+          0.6026,
+          0.5958,
+          0.591,
+          0.5858,
+          0.5814,
+          0.5803,
+          0.5822,
+          0.5908,
+          0.6084,
+          0.6329,
+          0.6799999,
+          0.7693,
+          0.8471,
+          0.8789,
+          0.8913,
+          0.8972,
+          0.899,
+          0.8990999,
+          0.9007,
+          0.9043,
+          0.9076999,
+          0.9114,
+          0.9137,
+          0.9159,
+          0.9162,
+          0.9087,
+          0.8918
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "ISCC-NBS Centroid Charts.txt",
+        "source_format": "SpectraShop Text"
+      }
+    },
+    {
+      "id": "5",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2006-04-17",
+        "title": "moderate Pink",
+        "description": "Supplement to NBS Circular 553. Standard sample No. 2106.",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 1,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0,
+          "measurement_filter": "D65"
+        },
+        "surface": "Gloss",
+        "sample_backing": "Black",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "ISCC-NBS",
+          "material": "Paint",
+          "measurement_source": "D65",
+          "prod_date": "1964",
+          "sample_id3": "Red Pink"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.08549999,
+          0.1517,
+          0.27,
+          0.3681,
+          0.3947,
+          0.3977,
+          0.3982,
+          0.3986,
+          0.3972,
+          0.3929,
+          0.3863,
+          0.3798,
+          0.3728,
+          0.3682,
+          0.367,
+          0.3683,
+          0.3743,
+          0.3836,
+          0.3964,
+          0.4279,
+          0.5224,
+          0.6301,
+          0.6809,
+          0.6993,
+          0.7064,
+          0.7097999,
+          0.7117,
+          0.7122,
+          0.7151,
+          0.7196,
+          0.7224,
+          0.7239,
+          0.7252,
+          0.7284,
+          0.7169,
+          0.6944
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "ISCC-NBS Centroid Charts.txt",
+        "source_format": "SpectraShop Text"
+      }
+    },
+    {
+      "id": "6",
+      "metadata": {
+        "measurement_type": "reflectance",
+        "date": "2006-04-17",
+        "title": "dark Pink",
+        "description": "Supplement to NBS Circular 553. Standard sample No. 2106.",
+        "operator": "Robin D. Myers",
+        "instrument": {
+          "model": "Spectrolino"
+        },
+        "measurement_conditions": {
+          "averaging": 1,
+          "geometry": "45/0",
+          "measurement_aperture_mm": 4.0,
+          "measurement_filter": "D65"
+        },
+        "surface": "Gloss",
+        "sample_backing": "Black",
+        "copyright": "© Robin D. Myers, all rights reserved worldwide. chromaxion.com",
+        "custom": {
+          "manufacturer": "ISCC-NBS",
+          "material": "Paint",
+          "measurement_source": "D65",
+          "prod_date": "1964",
+          "sample_id3": "Red Pink"
+        }
+      },
+      "wavelength_axis": {
+        "range_nm": {
+          "start": 380.0,
+          "end": 730.0,
+          "interval": 10.0
+        }
+      },
+      "spectral_data": {
+        "values": [
+          0.07309999,
+          0.1216,
+          0.1885,
+          0.2298,
+          0.2372,
+          0.2373,
+          0.2373,
+          0.238,
+          0.2365,
+          0.2321,
+          0.2253,
+          0.2187,
+          0.2132,
+          0.2118,
+          0.2131,
+          0.2144,
+          0.2172,
+          0.2185,
+          0.2177,
+          0.2301,
+          0.3037,
+          0.4157,
+          0.485,
+          0.5117,
+          0.5211999,
+          0.5233999,
+          0.5235,
+          0.5231,
+          0.5238,
+          0.5247999,
+          0.5257,
+          0.5256,
+          0.5257,
+          0.5245,
+          0.5195,
+          0.5019
+        ]
+      },
+      "color_science": {
+        "illuminant": "D65",
+        "cie_observer": "CIE 1931 2 degree"
+      },
+      "provenance": {
+        "software": "SpectraShop",
+        "software_version": "5.0",
+        "source_file": "ISCC-NBS Centroid Charts.txt",
+        "source_format": "SpectraShop Text"
+      }
+    }
+  ]
+}
