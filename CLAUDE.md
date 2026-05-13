@@ -40,6 +40,7 @@ cargo check --all-targets       # build check
 cargo test --all-features       # tests with all features
 cargo test --no-default-features  # tests without optional features
 cargo doc --no-deps --all-features 2>&1 | grep -i warning  # doc warnings
+cargo rdme --check              # README in sync with lib.rs doc comment
 ```
 
 Feature-gated code must compile both with and without the feature.
@@ -77,7 +78,17 @@ change.
 Also update `colorimetry/Cargo.toml` (in the colorimetry repo) if the
 `spectral-io` version pin there needs bumping.
 
-### 3. Run checks
+### 3. Regenerate README
+
+```sh
+cargo rdme
+```
+
+This rewrites the `<!-- cargo-rdme start/end -->` section of `README.md` from
+the crate-level doc comment in `src/lib.rs`. Run it whenever the doc comment
+changes. Commit the updated `README.md` along with any source changes.
+
+### 4. Run checks
 
 ```sh
 cargo fmt --check
@@ -89,10 +100,10 @@ cargo doc --no-deps --all-features
 
 All must pass with zero errors and zero warnings.
 
-### 4. Commit and tag
+### 5. Commit and tag
 
 ```sh
-git add Cargo.toml Cargo.lock CHANGELOG.md
+git add Cargo.toml Cargo.lock CHANGELOG.md README.md
 git commit -m "chore: release v0.2.0"
 git tag v0.2.0
 git push origin main --tags
@@ -101,7 +112,7 @@ git push origin main --tags
 Create a GitHub Release from the tag and paste the relevant CHANGELOG
 section as the release notes.
 
-### 5. Publish to crates.io
+### 6. Publish to crates.io
 
 ```sh
 cargo publish
@@ -130,7 +141,7 @@ verify the colorimetry build still passes.
 
 ## SpectraShop data
 
-The directory `data/spectrashop/` is gitignored. It holds spectral data files
+Spectral data files in the directory the directory `data/spectrashop/` are taken
 from the [Chromaxion Spectral Library](https://www.chromaxion.com/spectral-library.php)
 by Robin Myers Imaging, which are subject to the following terms:
 
@@ -141,6 +152,6 @@ by Robin Myers Imaging, which are subject to the following terms:
 All data © Robin D. Myers, all rights reserved worldwide.
 Contact <robin@rmimaging.com> for commercial licensing enquiries.
 
-The three example files committed to `examples/` (Black Ace Licorice, Wallace
-China, Apple 13-inch Monitor) are redistributed with attribution as permitted
-by the above terms.
+Corresponding JSON conversions in `data/spectral-io/`
+embed the copyright notice `© Robin D. Myers, all rights reserved worldwide.
+chromaxion.com`.

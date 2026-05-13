@@ -833,4 +833,166 @@ mod tests {
         // No SAMPLE_ID field → fallback to "1"
         assert_eq!(file.spectra()[0].id, "1");
     }
+
+    #[test]
+    fn spectrashop_multiple_data_blocks() {
+        // Files may contain more than one BEGIN_DATA block reusing a single
+        // BEGIN_DATA_FORMAT; records from all blocks are merged into a single batch.
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "s1\t380\t0.1\t390\t0.2",
+            "END_DATA",
+            "BEGIN_DATA",
+            "s2\t380\t0.3\t390\t0.4",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        assert!(matches!(file, SpectrumFile::Batch { .. }));
+        assert_eq!(file.spectra().len(), 2);
+        assert_eq!(file.spectra()[0].id, "s1");
+        assert_eq!(file.spectra()[1].id, "s2");
+    }
+
+    #[test]
+    fn spectrashop_note_in_provenance() {
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "NOTE\tCalibrated 2024-01",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "s1\t380\t0.1\t390\t0.2",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        let prov = file.spectra()[0].provenance.as_ref().unwrap();
+        assert_eq!(prov.notes.as_deref(), Some("Calibrated 2024-01"));
+    }
+
+    #[test]
+    fn spectrashop_both_notes_joined() {
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "ACQUIRE_NOTE\tFirst note",
+            "NOTE\tSecond note",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "s1\t380\t0.1\t390\t0.2",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        let prov = file.spectra()[0].provenance.as_ref().unwrap();
+        assert_eq!(prov.notes.as_deref(), Some("First note; Second note"));
+    }
+
+    #[test]
+    fn spectrashop_measurement_filter_preserved() {
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "MEASUREMENT_GEOMETRY\t45/0",
+            "MEASUREMENT_FILTER\tD65",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "s1\t380\t0.1\t390\t0.2",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        let mc = file.spectra()[0]
+            .metadata
+            .measurement_conditions
+            .as_ref()
+            .unwrap();
+        assert_eq!(mc.measurement_filter.as_deref(), Some("D65"));
+    }
+
+    #[test]
+    fn spectrashop_sample_id3_in_custom() {
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID1\tSAMPLE_ID2\tSAMPLE_ID3\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "42\tDeep Red\tWarm Red\t380\t0.1\t390\t0.2",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        let sp = file.spectra()[0];
+        assert_eq!(sp.id, "42");
+        assert_eq!(sp.metadata.title.as_deref(), Some("Deep Red"));
+        let custom = sp.metadata.custom.as_ref().expect("custom must be set");
+        assert_eq!(
+            custom.get("sample_id3").and_then(|v| v.as_str()),
+            Some("Warm Red")
+        );
+    }
+
+    #[test]
+    fn spectrashop_unknown_data_field_in_custom() {
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID\tMY_CUSTOM_FIELD\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "s1\tmy_value\t380\t0.1\t390\t0.2",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        let custom = file.spectra()[0]
+            .metadata
+            .custom
+            .as_ref()
+            .expect("custom must be set");
+        assert_eq!(
+            custom.get("my_custom_field").and_then(|v| v.as_str()),
+            Some("my_value")
+        );
+    }
+
+    #[test]
+    fn spectrashop_aperture_comma_decimal() {
+        // European locale files use comma as decimal separator.
+        let input = [
+            "SPECTRUM_TYPE\tReflective",
+            "MEASUREMENT_GEOMETRY\t45/0",
+            "MEASUREMENT_APERTURE\t4,5 mm",
+            "BEGIN_DATA_FORMAT",
+            "SAMPLE_ID\tSPECTRAL_NM\tSPECTRAL_VAL\tSPECTRAL_NM\tSPECTRAL_VAL",
+            "END_DATA_FORMAT",
+            "BEGIN_DATA",
+            "s1\t380\t0.1\t390\t0.2",
+            "END_DATA",
+        ]
+        .join("\n");
+
+        let file = SpectrumFile::from_spectrashop_str(&input).unwrap();
+        let mc = file.spectra()[0]
+            .metadata
+            .measurement_conditions
+            .as_ref()
+            .unwrap();
+        assert!((mc.measurement_aperture_mm.unwrap() - 4.5).abs() < 1e-9);
+    }
 }

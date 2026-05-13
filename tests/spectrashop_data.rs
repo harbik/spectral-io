@@ -164,9 +164,7 @@ fn spectrashop_filters_transmissive() {
 #[test]
 fn spectrashop_monitor_irradiance() {
     let path = data_dir().join("monitors/Apple 13 inch.txt");
-    if !path.exists() {
-        return;
-    }
+    assert!(path.exists(), "committed fixture missing: {}", path.display());
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     // SPECTRUM_TYPE = Emissive-monitor → Irradiance
     assert!(matches!(
@@ -174,4 +172,81 @@ fn spectrashop_monitor_irradiance() {
         spectral_io::MeasurementType::Irradiance
     ));
     assert_eq!(file.spectra().len(), 4); // R, G, B, W
+
+    // 2 nm regular grid (390–728 nm) → range_nm, and produces far more points than a typical 10 nm grid
+    assert!(
+        file.spectra()[0].wavelength_axis.range_nm.is_some(),
+        "2 nm regular grid should use range_nm"
+    );
+    assert!(
+        file.spectra()[0].n_points() > 100,
+        "high-resolution grid should have many points; got {}",
+        file.spectra()[0].n_points()
+    );
+}
+
+#[test]
+fn spectrashop_thermochromic_ink() {
+    let path = data_dir().join("inks/Coors thermochromic ink.txt");
+    assert!(path.exists(), "committed fixture missing: {}", path.display());
+    let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
+    let spectra = file.spectra();
+
+    assert_eq!(spectra.len(), 2, "two temperature states");
+
+    // NMEASUREMENTS 4 → averaging field
+    let mc = spectra[0]
+        .metadata
+        .measurement_conditions
+        .as_ref()
+        .expect("measurement_conditions missing");
+    assert_eq!(mc.averaging, Some(4), "NMEASUREMENTS should be preserved as averaging");
+
+    // MEASUREMENT_SOURCE A → custom map
+    let custom = spectra[0]
+        .metadata
+        .custom
+        .as_ref()
+        .and_then(|c| c.get("measurement_source"))
+        .and_then(|v| v.as_str());
+    assert_eq!(custom, Some("A"), "MEASUREMENT_SOURCE A should be in custom");
+}
+
+#[test]
+fn spectrashop_iscc_nbs_three_id_fields() {
+    let path = data_dir().join("charts/ISCC-NBS Centroid Charts (5 samples).txt");
+    assert!(path.exists(), "committed fixture missing: {}", path.display());
+    let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
+    let spectra = file.spectra();
+
+    assert_eq!(spectra.len(), 5, "trimmed fixture has 5 spectra");
+
+    // First record: SAMPLE_ID1="2", SAMPLE_ID2="strong Pink", SAMPLE_ID3="Red Pink"
+    // id comes from SAMPLE_ID1; SAMPLE_ID2 → metadata.title; SAMPLE_ID3 → custom
+    assert_eq!(spectra[0].id, "2", "id should be SAMPLE_ID1");
+    assert_eq!(
+        spectra[0].metadata.title.as_deref(),
+        Some("strong Pink"),
+        "SAMPLE_ID2 should map to title"
+    );
+
+    // FILE_DESCRIPTOR → description
+    assert_eq!(
+        spectra[0].metadata.description.as_deref(),
+        Some("Supplement to NBS Circular 553. Standard sample No. 2106."),
+        "FILE_DESCRIPTOR should map to description"
+    );
+
+    // SAMPLE_BACKING Black
+    assert_eq!(
+        spectra[0].metadata.sample_backing.as_deref(),
+        Some("Black"),
+        "SAMPLE_BACKING should be preserved"
+    );
+
+    // Regular 10 nm grid
+    assert!(
+        spectra[0].wavelength_axis.range_nm.is_some(),
+        "10 nm regular grid should use range_nm"
+    );
 }
