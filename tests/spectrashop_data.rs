@@ -164,9 +164,7 @@ fn spectrashop_filters_transmissive() {
 #[test]
 fn spectrashop_monitor_irradiance() {
     let path = data_dir().join("monitors/Apple 13 inch.txt");
-    if !path.exists() {
-        return;
-    }
+    assert!(path.exists(), "committed fixture missing: {}", path.display());
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     // SPECTRUM_TYPE = Emissive-monitor → Irradiance
     assert!(matches!(
@@ -190,9 +188,7 @@ fn spectrashop_monitor_irradiance() {
 #[test]
 fn spectrashop_thermochromic_ink() {
     let path = data_dir().join("inks/Coors thermochromic ink.txt");
-    if !path.exists() {
-        return;
-    }
+    assert!(path.exists(), "committed fixture missing: {}", path.display());
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     let spectra = file.spectra();
 
@@ -219,24 +215,19 @@ fn spectrashop_thermochromic_ink() {
 #[test]
 fn spectrashop_iscc_nbs_three_id_fields() {
     let path = data_dir().join("charts/ISCC-NBS Centroid Charts (5 samples).txt");
-    if !path.exists() {
-        return;
-    }
+    assert!(path.exists(), "committed fixture missing: {}", path.display());
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     let spectra = file.spectra();
 
     assert_eq!(spectra.len(), 5, "trimmed fixture has 5 spectra");
 
     // First record: SAMPLE_ID1="2", SAMPLE_ID2="strong Pink", SAMPLE_ID3="Red Pink"
-    // The id field should be derived from all three
-    assert!(
-        !spectra[0].id.is_empty(),
-        "id must not be empty when all three ID fields are set"
-    );
-    assert!(
-        spectra[0].id.contains("2") || spectra[0].id.contains("Pink"),
-        "id should incorporate SAMPLE_ID fields; got {:?}",
-        spectra[0].id
+    // id comes from SAMPLE_ID1; SAMPLE_ID2 → metadata.title; SAMPLE_ID3 → custom
+    assert_eq!(spectra[0].id, "2", "id should be SAMPLE_ID1");
+    assert_eq!(
+        spectra[0].metadata.title.as_deref(),
+        Some("strong Pink"),
+        "SAMPLE_ID2 should map to title"
     );
 
     // FILE_DESCRIPTOR → description

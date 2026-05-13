@@ -836,8 +836,8 @@ mod tests {
 
     #[test]
     fn spectrashop_multiple_data_blocks() {
-        // Files may contain more than one BEGIN_DATA_FORMAT/BEGIN_DATA pair;
-        // records from all blocks are merged into a single batch.
+        // Files may contain more than one BEGIN_DATA block reusing a single
+        // BEGIN_DATA_FORMAT; records from all blocks are merged into a single batch.
         let input = [
             "SPECTRUM_TYPE\tReflective",
             "BEGIN_DATA_FORMAT",
