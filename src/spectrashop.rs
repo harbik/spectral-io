@@ -155,7 +155,7 @@ pub(super) fn ss_parse(input: &str, source_file: Option<&str>) -> Result<Spectru
     if all_records.len() == 1 {
         Ok(SpectrumFile::Single {
             schema_version,
-            spectrum: all_records.into_iter().next().unwrap(),
+            spectrum: Box::new(all_records.into_iter().next().unwrap()),
         })
     } else {
         Ok(SpectrumFile::Batch {
@@ -245,7 +245,7 @@ fn ss_float(s: &str) -> Option<f64> {
 
 // Parse "4 mm" → Some(4.0); "LAV" → None.
 fn ss_aperture_mm(s: &str) -> Option<f64> {
-    ss_float(s.trim().split_whitespace().next().unwrap_or(s))
+    ss_float(s.split_whitespace().next().unwrap_or(s))
 }
 
 // Map SpectraShop SPECTRUM_TYPE to MeasurementType.
@@ -316,7 +316,7 @@ fn ss_parse_date(s: &str) -> Option<String> {
     if parts.len() == 3 {
         let month = parts[0].trim();
         let day = parts[1].trim();
-        let year = parts[2].trim().split_whitespace().next().unwrap_or("");
+        let year = parts[2].split_whitespace().next().unwrap_or("");
         if month.parse::<u32>().is_ok()
             && day.parse::<u32>().is_ok()
             && year.len() == 4
@@ -463,7 +463,7 @@ fn ss_build_record(
 
     let illuminant = meta.illuminant.as_deref().and_then(ss_illuminant);
     let observer = meta.observer.as_deref().and_then(ss_observer);
-    let color_science = (illuminant.is_some() || observer.is_some()).then(|| ColorScience {
+    let color_science = (illuminant.is_some() || observer.is_some()).then_some(ColorScience {
         illuminant,
         illuminant_custom_sd: None,
         cie_observer: observer,
@@ -486,7 +486,7 @@ fn ss_build_record(
                 .or_insert_with(|| serde_json::Value::String(s.clone()));
         }
     }
-    let custom = (!custom_map.is_empty()).then(|| serde_json::Value::Object(custom_map));
+    let custom = (!custom_map.is_empty()).then_some(serde_json::Value::Object(custom_map));
 
     let notes: Vec<&str> = [&meta.acquire_note, &meta.note]
         .iter()

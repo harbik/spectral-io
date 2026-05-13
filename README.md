@@ -237,7 +237,7 @@ Konica Minolta CM-700d in diffuse/8° geometry, stored as a regular
 
 ### Validation
 
-[`SpectrumFile::from_path`] and [`SpectrumFile::from_str`] run two validation
+[`SpectrumFile::from_path`] and [`SpectrumFile::from_json_str`] run two validation
 passes before returning:
 
 1. **Schema validation** — checks required fields, correct types, and that

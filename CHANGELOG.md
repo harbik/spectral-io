@@ -22,8 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scripts/spectrum_file_validate.py` — standalone Python validation script.
 - `examples/spectrashop_to_json` — CLI converter from SpectraShop `.txt` to
   `spectral-io` JSON, with `-c <copyright>` flag.
-- Example files: `black_ace_licorice` (simple, single-spectrum),
-  `wallace_china` (average, 22-spectrum batch),
-  `apple_13_inch_monitor` (complex, sub-nm irradiance, 4-channel).
+- Committed SpectraShop fixture files (`data/spectrashop/`) for five
+  representative instrument/material combinations (monitor, thermochromic ink,
+  ISCC-NBS centroid charts, candies, ceramics).
+- Corresponding JSON conversions in `data/spectral-io/` with Myers copyright
+  notice for each committed fixture.
+- Unit tests for previously uncovered parser paths: multiple `BEGIN_DATA`
+  blocks, `NOTE`/`ACQUIRE_NOTE` provenance, measurement filter preservation,
+  `SAMPLE_ID3` and unknown fields in `custom`, European decimal aperture format.
 
 [0.1.0]: https://github.com/harbik/spectral-io/releases/tag/v0.1.0

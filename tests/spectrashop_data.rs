@@ -164,7 +164,11 @@ fn spectrashop_filters_transmissive() {
 #[test]
 fn spectrashop_monitor_irradiance() {
     let path = data_dir().join("monitors/Apple 13 inch.txt");
-    assert!(path.exists(), "committed fixture missing: {}", path.display());
+    assert!(
+        path.exists(),
+        "committed fixture missing: {}",
+        path.display()
+    );
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     // SPECTRUM_TYPE = Emissive-monitor → Irradiance
     assert!(matches!(
@@ -188,7 +192,11 @@ fn spectrashop_monitor_irradiance() {
 #[test]
 fn spectrashop_thermochromic_ink() {
     let path = data_dir().join("inks/Coors thermochromic ink.txt");
-    assert!(path.exists(), "committed fixture missing: {}", path.display());
+    assert!(
+        path.exists(),
+        "committed fixture missing: {}",
+        path.display()
+    );
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     let spectra = file.spectra();
 
@@ -200,7 +208,11 @@ fn spectrashop_thermochromic_ink() {
         .measurement_conditions
         .as_ref()
         .expect("measurement_conditions missing");
-    assert_eq!(mc.averaging, Some(4), "NMEASUREMENTS should be preserved as averaging");
+    assert_eq!(
+        mc.averaging,
+        Some(4),
+        "NMEASUREMENTS should be preserved as averaging"
+    );
 
     // MEASUREMENT_SOURCE A → custom map
     let custom = spectra[0]
@@ -209,13 +221,21 @@ fn spectrashop_thermochromic_ink() {
         .as_ref()
         .and_then(|c| c.get("measurement_source"))
         .and_then(|v| v.as_str());
-    assert_eq!(custom, Some("A"), "MEASUREMENT_SOURCE A should be in custom");
+    assert_eq!(
+        custom,
+        Some("A"),
+        "MEASUREMENT_SOURCE A should be in custom"
+    );
 }
 
 #[test]
 fn spectrashop_iscc_nbs_three_id_fields() {
     let path = data_dir().join("charts/ISCC-NBS Centroid Charts (5 samples).txt");
-    assert!(path.exists(), "committed fixture missing: {}", path.display());
+    assert!(
+        path.exists(),
+        "committed fixture missing: {}",
+        path.display()
+    );
     let file = SpectrumFile::from_spectrashop_path(&path).unwrap();
     let spectra = file.spectra();
 

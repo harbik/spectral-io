@@ -29,11 +29,14 @@
 //! ### Importing a SpectraShop file
 //!
 //! ```no_run
+//! # #[cfg(feature = "spectrashop")]
+//! # {
 //! use spectral_io::SpectrumFile;
 //!
 //! let file = SpectrumFile::from_spectrashop_path("Munsell Matte 1994.txt")
 //!     .expect("could not parse SpectraShop file");
 //! println!("{} spectra imported", file.spectra().len());
+//! # }
 //! ```
 //!
 //! ### Serialising back to JSON
@@ -235,7 +238,7 @@
 //!
 //! ## Validation
 //!
-//! [`SpectrumFile::from_path`] and [`SpectrumFile::from_str`] run two validation
+//! [`SpectrumFile::from_path`] and [`SpectrumFile::from_json_str`] run two validation
 //! passes before returning:
 //!
 //! 1. **Schema validation** — checks required fields, correct types, and that
@@ -338,12 +341,12 @@ pub type Result<T> = std::result::Result<T, SpectrumFileError>;
 pub enum SpectrumFile {
     Single {
         schema_version: String,
-        spectrum: SpectrumRecord,
+        spectrum: Box<SpectrumRecord>,
     },
     Batch {
         schema_version: String,
         #[serde(skip_serializing_if = "Option::is_none")]
-        batch_metadata: Option<BatchMetadata>,
+        batch_metadata: Option<Box<BatchMetadata>>,
         spectra: Vec<SpectrumRecord>,
     },
 }
@@ -355,11 +358,11 @@ impl SpectrumFile {
     /// Runs structural schema validation then cross-field checks.
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self> {
         let raw = std::fs::read_to_string(path)?;
-        Self::from_str(&raw)
+        Self::from_json_str(&raw)
     }
 
     /// Load and fully validate a UV-Vis JSON file from a JSON string.
-    pub fn from_str(json: &str) -> Result<Self> {
+    pub fn from_json_str(json: &str) -> Result<Self> {
         // 1. Parse into untyped Value for structural checks
         let value: serde_json::Value = serde_json::from_str(json)?;
 
@@ -385,7 +388,7 @@ impl SpectrumFile {
     /// Returns all spectra in the file (works for both single and batch).
     pub fn spectra(&self) -> Vec<&SpectrumRecord> {
         match self {
-            SpectrumFile::Single { spectrum, .. } => vec![spectrum],
+            SpectrumFile::Single { spectrum, .. } => vec![spectrum.as_ref()],
             SpectrumFile::Batch { spectra, .. } => spectra.iter().collect(),
         }
     }
@@ -401,7 +404,7 @@ impl SpectrumFile {
     /// Batch metadata, if this is a batch file.
     pub fn batch_metadata(&self) -> Option<&BatchMetadata> {
         match self {
-            SpectrumFile::Batch { batch_metadata, .. } => batch_metadata.as_ref(),
+            SpectrumFile::Batch { batch_metadata, .. } => batch_metadata.as_deref(),
             _ => None,
         }
     }
@@ -494,6 +497,13 @@ impl SpectrumFile {
         } else {
             Err(SpectrumFileError::CrossFieldValidation(errors.join("\n")))
         }
+    }
+}
+
+impl std::str::FromStr for SpectrumFile {
+    type Err = SpectrumFileError;
+    fn from_str(s: &str) -> Result<Self> {
+        Self::from_json_str(s)
     }
 }
 
@@ -1215,8 +1225,8 @@ mod tests {
 
     #[test]
     fn valid_single_spectrum() {
-        let file =
-            SpectrumFile::from_str(&make_single("reflectance", &wls_41(), &vals_41())).unwrap();
+        let file = SpectrumFile::from_json_str(&make_single("reflectance", &wls_41(), &vals_41()))
+            .unwrap();
         let spectra = file.spectra();
         assert_eq!(spectra.len(), 1);
         assert_eq!(spectra[0].n_points(), 41);
@@ -1233,7 +1243,7 @@ mod tests {
              "wavelength_axis":{"values_nm":[380,390,400]},
              "spectral_data":{"values":[0.5,0.6,0.7]}}
         ]}"#;
-        let file = SpectrumFile::from_str(json).unwrap();
+        let file = SpectrumFile::from_json_str(json).unwrap();
         assert_eq!(file.spectra().len(), 2);
     }
 
@@ -1244,7 +1254,7 @@ mod tests {
             "wavelength_axis":{"values_nm":[380,390,400]},
             "spectral_data":{"values":[0.1,0.2,0.3]}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1253,7 +1263,7 @@ mod tests {
     fn invalid_measurement_type_is_schema_error() {
         let json = make_single("fluorescence", &[380.0, 390.0], &[0.1, 0.2]);
         assert!(matches!(
-            SpectrumFile::from_str(&json),
+            SpectrumFile::from_json_str(&json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1263,7 +1273,7 @@ mod tests {
         let wls = vec![380.0, 390.0, 400.0];
         let vals = vec![0.1, 0.2]; // too short
         assert!(matches!(
-            SpectrumFile::from_str(&make_single("reflectance", &wls, &vals)),
+            SpectrumFile::from_json_str(&make_single("reflectance", &wls, &vals)),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1273,7 +1283,7 @@ mod tests {
         let wls = vec![380.0, 370.0, 400.0];
         let vals = vec![0.1, 0.2, 0.3];
         assert!(matches!(
-            SpectrumFile::from_str(&make_single("reflectance", &wls, &vals)),
+            SpectrumFile::from_json_str(&make_single("reflectance", &wls, &vals)),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1283,7 +1293,7 @@ mod tests {
         let wls = vec![380.0, 390.0, 400.0];
         let vals = vec![0.1, 1.5, 0.3];
         assert!(matches!(
-            SpectrumFile::from_str(&make_single("reflectance", &wls, &vals)),
+            SpectrumFile::from_json_str(&make_single("reflectance", &wls, &vals)),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1293,7 +1303,7 @@ mod tests {
         // Absorbance is not bounded by [0,1]
         let wls = vec![380.0, 390.0, 400.0];
         let vals = vec![0.1, 1.8, 2.5];
-        assert!(SpectrumFile::from_str(&make_single("absorbance", &wls, &vals)).is_ok());
+        assert!(SpectrumFile::from_json_str(&make_single("absorbance", &wls, &vals)).is_ok());
     }
 
     #[test]
@@ -1304,7 +1314,7 @@ mod tests {
             "spectral_data":{"values":[0.1,0.2,0.3]},
             "color_science":{"illuminant":"custom"}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1313,15 +1323,15 @@ mod tests {
     fn points_iterator_correct() {
         let wls = vec![380.0, 390.0, 400.0];
         let vals = vec![0.1, 0.2, 0.3];
-        let file = SpectrumFile::from_str(&make_single("reflectance", &wls, &vals)).unwrap();
+        let file = SpectrumFile::from_json_str(&make_single("reflectance", &wls, &vals)).unwrap();
         let pts = file.spectra()[0].points();
         assert_eq!(pts, vec![(380.0, 0.1), (390.0, 0.2), (400.0, 0.3)]);
     }
 
     #[test]
     fn wavelength_range_accessor() {
-        let file =
-            SpectrumFile::from_str(&make_single("reflectance", &wls_41(), &vals_41())).unwrap();
+        let file = SpectrumFile::from_json_str(&make_single("reflectance", &wls_41(), &vals_41()))
+            .unwrap();
         assert_eq!(
             file.spectra()[0].wavelength_range_nm(),
             Some((380.0, 780.0))
@@ -1335,7 +1345,7 @@ mod tests {
             "wavelength_axis":{"values_nm":[380,390,400]},
             "spectral_data":{"values":[0.1,0.2,0.3],"scale":"ratio"}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1396,7 +1406,7 @@ mod tests {
             }
         }"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1421,7 +1431,7 @@ mod tests {
             }
         }"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1458,7 +1468,7 @@ mod tests {
         }"#;
         assert!(SpectrumFile::from_str_unchecked(json).is_ok());
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::CrossFieldValidation(_))
         ));
     }
@@ -1481,8 +1491,8 @@ mod tests {
 
     #[test]
     fn batch_metadata_returns_none_for_single_file() {
-        let file =
-            SpectrumFile::from_str(&make_single("reflectance", &wls_41(), &vals_41())).unwrap();
+        let file = SpectrumFile::from_json_str(&make_single("reflectance", &wls_41(), &vals_41()))
+            .unwrap();
         assert!(file.batch_metadata().is_none());
     }
 
@@ -1493,7 +1503,7 @@ mod tests {
             "metadata":{"measurement_type":"reflectance","date":"2026-04-29"},
             "wavelength_axis":{"values_nm":[380,390,400]},
             "spectral_data":{"values":[50.0,75.0,85.0],"scale":"percent"}}}"#;
-        assert!(SpectrumFile::from_str(json).is_ok());
+        assert!(SpectrumFile::from_json_str(json).is_ok());
     }
 
     #[test]
@@ -1503,7 +1513,7 @@ mod tests {
             "wavelength_axis":{"values_nm":[380,390]},"spectral_data":{"values":[0.1,0.2]}},
             "spectra":[]}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1512,7 +1522,7 @@ mod tests {
     fn empty_spectra_array_is_schema_error() {
         let json = r#"{"schema_version":"1.0.0","file_type":"batch","spectra":[]}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1525,7 +1535,7 @@ mod tests {
             "spectral_data":{"values":[0.1,0.2,0.3]},
             "color_science":{"illuminant":"TL84"}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1538,7 +1548,7 @@ mod tests {
             "spectral_data":{"values":[0.1,0.2,0.3]},
             "color_science":{"cie_observer":"CIE 2006"}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1550,7 +1560,7 @@ mod tests {
             "wavelength_axis":{"values_nm":[380]},
             "spectral_data":{"values":[0.1]}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
@@ -1562,7 +1572,7 @@ mod tests {
             "wavelength_axis":{"range_nm":{"start":380,"end":780,"interval":0}},
             "spectral_data":{"values":[0.1,0.2]}}}"#;
         assert!(matches!(
-            SpectrumFile::from_str(json),
+            SpectrumFile::from_json_str(json),
             Err(SpectrumFileError::SchemaValidation(_))
         ));
     }
