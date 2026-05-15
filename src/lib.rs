@@ -122,7 +122,7 @@
 //!
 //! | Field | Type | Notes |
 //! |---|---|---|
-//! | `measurement_type` | string enum | `reflectance`, `transmittance`, `absorbance`, `radiance`, `irradiance` |
+//! | `measurement_type` | string enum | `reflectance`, `transmittance`, `absorbance`, `radiance`, `irradiance`, `emission` |
 //! | `date` | string | ISO 8601 date (`YYYY-MM-DD`) |
 //! | `title` | string | optional human-readable name for the sample |
 //! | `sample_id` | string | optional machine-readable sample identifier |
@@ -582,7 +582,7 @@ pub struct SpectrumMetadata {
 }
 
 /// The physical quantity measured.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MeasurementType {
     Reflectance,
@@ -590,6 +590,7 @@ pub enum MeasurementType {
     Absorbance,
     Radiance,
     Irradiance,
+    Emission,
 }
 
 /// Minimal instrument identification.
@@ -826,6 +827,7 @@ const ALLOWED_MEASUREMENT_TYPES: &[&str] = &[
     "absorbance",
     "radiance",
     "irradiance",
+    "emission",
 ];
 
 const ALLOWED_ILLUMINANTS: &[&str] = &[
