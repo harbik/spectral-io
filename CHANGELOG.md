@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-15
+
+### Added
+
+- `csv` feature (opt-in): `SpectrumFile::from_csv_path` / `from_csv_str` —
+  import generic CSV or TSV spectral files with an optional metadata header
+  block and one spectrum per data column.
+- `csv` feature: `SpectrumFile::to_tsv` / `to_csv` / `write_tsv` / `write_csv`
+  — export any `SpectrumFile` to tab- or comma-separated text.
+
+### Changed
+
+- `spectrashop` feature is **no longer enabled by default**. Crates that relied
+  on the implicit default must now opt in explicitly: add
+  `spectral-io = { version = "0.3", features = ["spectrashop"] }` to
+  `Cargo.toml`.
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
@@ -38,5 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blocks, `NOTE`/`ACQUIRE_NOTE` provenance, measurement filter preservation,
   `SAMPLE_ID3` and unknown fields in `custom`, European decimal aperture format.
 
+[0.3.0]: https://github.com/harbik/spectral-io/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/harbik/spectral-io/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/harbik/spectral-io/releases/tag/v0.1.0
