@@ -236,6 +236,7 @@ struct CsvMeta {
     copyright: Option<String>,
     surface: Option<String>,
     sample_backing: Option<String>,
+    sample_id: Option<String>,
     illuminant: Option<String>,
     observer: Option<String>,
     notes: Option<String>,
@@ -254,6 +255,7 @@ impl Default for CsvMeta {
             copyright: None,
             surface: None,
             sample_backing: None,
+            sample_id: None,
             illuminant: None,
             observer: None,
             notes: None,
@@ -296,6 +298,7 @@ fn apply_kv(key: &str, value: &str, meta: &mut CsvMeta) {
         "copyright" => meta.copyright = Some(value.to_string()),
         "surface" => meta.surface = Some(value.to_string()),
         "sample_backing" => meta.sample_backing = Some(value.to_string()),
+        "sample_id" => meta.sample_id = Some(value.to_string()),
         "illuminant" => meta.illuminant = Some(value.to_string()),
         "observer" => meta.observer = Some(value.to_string()),
         "notes" | "note" => meta.notes = Some(value.to_string()),
@@ -379,7 +382,7 @@ fn build_record(
             date: meta.date.clone(),
             title: meta.title.clone(),
             description: meta.description.clone(),
-            sample_id: None,
+            sample_id: meta.sample_id.clone(),
             time: None,
             operator: meta.operator.clone(),
             instrument,
@@ -438,6 +441,9 @@ fn write_meta_header(out: &mut String, sp: &SpectrumRecord) {
             out.push_str(&format!("Instrument: {model}\n"));
         }
     }
+    if let Some(sid) = &m.sample_id {
+        out.push_str(&format!("Sample_ID: {sid}\n"));
+    }
     if let Some(cs) = &sp.color_science {
         if let Some(ill) = &cs.illuminant {
             out.push_str(&format!("Illuminant: {ill}\n"));
@@ -445,6 +451,9 @@ fn write_meta_header(out: &mut String, sp: &SpectrumRecord) {
         if let Some(obs) = &cs.cie_observer {
             out.push_str(&format!("Observer: {obs}\n"));
         }
+    }
+    if let Some(notes) = sp.provenance.as_ref().and_then(|p| p.notes.as_deref()) {
+        out.push_str(&format!("Notes: {notes}\n"));
     }
     out.push('\n');
 }
@@ -955,6 +964,72 @@ mod tests {
         assert_eq!(spectra.len(), 2);
         assert_eq!(spectra[0].id, "A");
         assert_eq!(spectra[1].id, "spectrum_2"); // padded
+    }
+
+    // ── sample_id ─────────────────────────────────────────────────────────────
+
+    #[test]
+    fn sample_id_parsed_into_metadata() {
+        let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
+            Sample_ID: SN-0042\nwavelength_nm\ts\n380\t0.1\n390\t0.2\n";
+        let file = csv_parse(input, None).unwrap();
+        assert_eq!(
+            file.spectra()[0].metadata.sample_id.as_deref(),
+            Some("SN-0042")
+        );
+    }
+
+    #[test]
+    fn sample_id_round_trips() {
+        let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
+            Sample_ID: SN-0042\nwavelength_nm\ts\n380\t0.1\n390\t0.2\n";
+        let file1 = csv_parse(input, None).unwrap();
+        let tsv = csv_write(&file1, '\t');
+        let file2 = csv_parse(&tsv, None).unwrap();
+        assert_eq!(
+            file2.spectra()[0].metadata.sample_id.as_deref(),
+            Some("SN-0042")
+        );
+    }
+
+    // ── notes round-trip ─────────────────────────────────────────────────────
+
+    #[test]
+    fn notes_round_trip() {
+        let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
+            Notes: measured in triplicate\nwavelength_nm\ts\n380\t0.1\n390\t0.2\n";
+        let file1 = csv_parse(input, None).unwrap();
+        let tsv = csv_write(&file1, '\t');
+        let file2 = csv_parse(&tsv, None).unwrap();
+        assert_eq!(
+            file2.spectra()[0]
+                .provenance
+                .as_ref()
+                .unwrap()
+                .notes
+                .as_deref(),
+            Some("measured in triplicate")
+        );
+    }
+
+    // ── custom fields not written ─────────────────────────────────────────────
+
+    #[test]
+    fn custom_fields_not_written_on_export() {
+        // Unknown keys are stored in metadata.custom on parse but are not
+        // emitted by csv_write — callers should not rely on them surviving
+        // a round-trip through the CSV format.
+        let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
+            Batch_ID: B001\nwavelength_nm\ts\n380\t0.1\n390\t0.2\n";
+        let file1 = csv_parse(input, None).unwrap();
+        assert!(file1.spectra()[0].metadata.custom.is_some());
+        let tsv = csv_write(&file1, '\t');
+        assert!(
+            !tsv.contains("Batch_ID"),
+            "custom field should not be written"
+        );
+        let file2 = csv_parse(&tsv, None).unwrap();
+        assert!(file2.spectra()[0].metadata.custom.is_none());
     }
 
     // ── source_file propagated into provenance ────────────────────────────────
