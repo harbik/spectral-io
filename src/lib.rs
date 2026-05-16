@@ -62,6 +62,22 @@
 //! # }
 //! ```
 //!
+//! ### Resampling to an equidistant grid
+//!
+//! ```no_run
+//! use spectral_io::{SpectrumFile, ResampleMethod, WavelengthAxis, WavelengthRange};
+//!
+//! let file = SpectrumFile::from_path("spectrum.json").unwrap();
+//! let target = WavelengthAxis {
+//!     range_nm: Some(WavelengthRange { start: 380.0, end: 780.0, interval: 10.0 }),
+//!     values_nm: None,
+//! };
+//! for sp in file.spectra() {
+//!     let resampled = sp.resample(&target, ResampleMethod::Linear);
+//!     println!("{}: {} points", resampled.id, resampled.n_points());
+//! }
+//! ```
+//!
 //! ### Serialising back to JSON
 //!
 //! Any [`SpectrumFile`] can be round-tripped through `serde_json`:
@@ -367,6 +383,9 @@ mod spectrashop;
 
 #[cfg(feature = "csv")]
 mod csv_text;
+
+mod resample;
+pub use resample::ResampleMethod;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Error type

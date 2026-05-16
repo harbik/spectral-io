@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `SpectrumRecord::resample(target, method)` — resample a spectrum onto a new
+  wavelength axis using `ResampleMethod::Linear` (linear interpolation, with
+  clamping at the range boundaries) or `ResampleMethod::BoxcarAverage`
+  (rectangular-window averaging; falls back to linear interpolation for output
+  bins that contain no input samples). A provenance `ProcessingStep` is
+  appended automatically.
+
 ## [0.3.0] - 2026-05-15
 
 ### Added
