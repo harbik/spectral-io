@@ -60,6 +60,22 @@ let file = SpectrumFile::from_spectrashop_path("Munsell Matte 1994.txt")
 println!("{} spectra imported", file.spectra().len());
 ```
 
+#### Resampling to an equidistant grid
+
+```rust
+use spectral_io::{SpectrumFile, ResampleMethod, WavelengthAxis, WavelengthRange};
+
+let file = SpectrumFile::from_path("spectrum.json").unwrap();
+let target = WavelengthAxis {
+    range_nm: Some(WavelengthRange { start: 380.0, end: 780.0, interval: 10.0 }),
+    values_nm: None,
+};
+for sp in file.spectra() {
+    let resampled = sp.resample(&target, ResampleMethod::Linear);
+    println!("{}: {} points", resampled.id, resampled.n_points());
+}
+```
+
 #### Serialising back to JSON
 
 Any [`SpectrumFile`] can be round-tripped through `serde_json`:
