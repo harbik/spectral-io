@@ -1,6 +1,6 @@
 [package]
 name = "spectral-io"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 rust-version = "1.80"
 description = "Read, write and validate optical spectral data files (UV-Vis, visible-range spectra)"
@@ -13,8 +13,9 @@ keywords = ["spectral", "spectrometer", "colorimetry", "uvvis", "optical"]
 categories = ["parser-implementations", "science", "encoding"]
 
 [features]
-default = ["spectrashop"]
+default = []
 spectrashop = []
+csv = []
 
 [[example]]
 name = "spectrashop_to_json"

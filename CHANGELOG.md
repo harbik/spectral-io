@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-16
+
+### Added
+
+- `csv` feature (opt-in): `SpectrumFile::from_csv_path` / `from_csv_str` —
+  import generic CSV or TSV spectral files with an optional metadata header
+  block and one spectrum per data column.
+- `csv` feature: `SpectrumFile::to_tsv` / `to_csv` / `write_tsv` / `write_csv`
+  — export any `SpectrumFile` to tab- or comma-separated text.
+- `SpectrumRecord::resample(target, method)` — resample a spectrum onto a new
+  wavelength axis using `ResampleMethod::Linear` (linear interpolation, with
+  clamping at the range boundaries), `ResampleMethod::BoxcarAverage`
+  (rectangular-window averaging; falls back to linear interpolation for output
+  bins that contain no input samples), or `ResampleMethod::Gaussian`
+  (Gaussian-kernel weighted average; FWHM taken from
+  `metadata.measurement_conditions.spectral_resolution_nm` when present,
+  otherwise the mean step size of the target axis). A provenance
+  `ProcessingStep` is appended automatically.
+
+### Changed
+
+- `spectrashop` feature is **no longer enabled by default**. Crates that relied
+  on the implicit default must now opt in explicitly: add
+  `spectral-io = { version = "0.3", features = ["spectrashop"] }` to
+  `Cargo.toml`.
+
 ## [0.2.0] - 2026-05-14
 
 ### Added
@@ -38,5 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blocks, `NOTE`/`ACQUIRE_NOTE` provenance, measurement filter preservation,
   `SAMPLE_ID3` and unknown fields in `custom`, European decimal aperture format.
 
+[0.3.0]: https://github.com/harbik/spectral-io/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/harbik/spectral-io/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/harbik/spectral-io/releases/tag/v0.1.0

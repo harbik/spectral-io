@@ -7,10 +7,18 @@
 //! The format captures everything a downstream calculation needs in one place:
 //! the measured spectrum, the physical conditions under which it was taken
 //! (instrument, geometry, illuminant, observer), and an optional provenance trail.
-//! The crate also ships an importer for the
-//! [SpectraShop](https://www.chromaxion.com/) tab-separated text format, which
-//! holds the [Chromaxion Spectral Library](https://www.chromaxion.com/spectral-library.php) —
-//! one of the largest freely available collections of measured spectra.
+//! The crate also ships support for additional formats:
+//!
+//! - **CSV / TSV** (`csv` feature) — generic delimited text with an optional
+//!   `KEY: VALUE` metadata header block; import via [`SpectrumFile::from_csv_path`]
+//!   / [`SpectrumFile::from_csv_str`], export via [`SpectrumFile::to_tsv`] /
+//!   [`SpectrumFile::to_csv`].
+//! - **SpectraShop** (`spectrashop` feature) — the tab-separated
+//!   text format used to distribute the
+//!   [Chromaxion Spectral Library](https://www.chromaxion.com/spectral-library.php),
+//!   one of the largest freely available collections of measured spectra; import
+//!   via [`SpectrumFile::from_spectrashop_path`] /
+//!   [`SpectrumFile::from_spectrashop_str`].
 //!
 //! ## Quick start
 //!
@@ -26,7 +34,22 @@
 //! }
 //! ```
 //!
-//! ### Importing a SpectraShop file
+//! ### Importing from other formats
+//!
+//! - CSV / TSV (`csv` feature):
+//!
+//! ```no_run
+//! # #[cfg(feature = "csv")]
+//! # {
+//! use spectral_io::SpectrumFile;
+//!
+//! let file = SpectrumFile::from_csv_path("measurements.tsv")
+//!     .expect("could not parse file");
+//! let tsv = file.to_tsv();
+//! # }
+//! ```
+//!
+//! - SpectraShop (`spectrashop` feature):
 //!
 //! ```no_run
 //! # #[cfg(feature = "spectrashop")]
@@ -37,6 +60,22 @@
 //!     .expect("could not parse SpectraShop file");
 //! println!("{} spectra imported", file.spectra().len());
 //! # }
+//! ```
+//!
+//! ### Resampling to an equidistant grid
+//!
+//! ```no_run
+//! use spectral_io::{SpectrumFile, ResampleMethod, WavelengthAxis, WavelengthRange};
+//!
+//! let file = SpectrumFile::from_path("spectrum.json").unwrap();
+//! let target = WavelengthAxis {
+//!     range_nm: Some(WavelengthRange { start: 380.0, end: 780.0, interval: 10.0 }),
+//!     values_nm: None,
+//! };
+//! for sp in file.spectra() {
+//!     let resampled = sp.resample(&target, ResampleMethod::Linear);
+//!     println!("{}: {} points", resampled.id, resampled.n_points());
+//! }
 //! ```
 //!
 //! ### Serialising back to JSON
@@ -54,7 +93,8 @@
 //!
 //! | Feature | Default | Description |
 //! |---|---|---|
-//! | `spectrashop` | yes | Enables [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`] |
+//! | `spectrashop` | no | Enables [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`] |
+//! | `csv` | no | Enables [`SpectrumFile::from_csv_path`], [`SpectrumFile::from_csv_str`], [`SpectrumFile::to_tsv`], [`SpectrumFile::to_csv`], [`SpectrumFile::write_tsv`], and [`SpectrumFile::write_csv`] |
 //!
 //! ## Error handling
 //!
@@ -264,7 +304,7 @@
 //! hundreds of real-world materials — paint colours, Munsell chips, colour charts,
 //! photographic filters, monitor primaries, fabrics, inks, and more.
 //!
-//! Requires the `spectrashop` feature (enabled by default).
+//! Requires the `spectrashop` feature.
 //! [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`]
 //! parse the format and convert each data record in the `BEGIN_DATA`/`END_DATA`
 //! block into a [`SpectrumRecord`]. File-level metadata (spectrum type, illuminant,
@@ -296,6 +336,43 @@
 //!
 //! All data © Robin D. Myers, all rights reserved worldwide.
 //! Contact <robin@rmimaging.com> for commercial licensing enquiries.
+//!
+//! ## Importing and exporting CSV / TSV files
+//!
+//! Requires the `csv` feature.
+//!
+//! [`SpectrumFile::from_csv_path`] and [`SpectrumFile::from_csv_str`] read a
+//! generic delimited text file. The delimiter (tab or comma) is auto-detected.
+//! Files have two sections:
+//!
+//! 1. **Header block** — zero or more `KEY: VALUE` metadata lines (or
+//!    `KEY = VALUE`; or `KEY<delim>VALUE` for a set of recognised keywords).
+//!    Lines starting with `#` and blank lines are ignored throughout.
+//!
+//! 2. **Data block** — the first row whose first cell parses as a number
+//!    (wavelength in nm) starts the data block. The immediately preceding
+//!    non-blank line (if non-numeric) is the optional column-header row.
+//!    First column = wavelength; each further column becomes one
+//!    [`SpectrumRecord`].
+//!
+//! A file with one data column returns [`SpectrumFile::Single`]; two or more
+//! return [`SpectrumFile::Batch`].
+//!
+//! ```text
+//! Measurement_Type: reflectance
+//! Date: 2026-05-15
+//! Illuminant: D65
+//!
+//! wavelength_nm    patch_A    patch_B
+//! 380    0.041    0.089
+//! 390    0.052    0.092
+//! 400    0.063    0.095
+//! ```
+//!
+//! [`SpectrumFile::to_tsv`] and [`SpectrumFile::to_csv`] serialise back to
+//! tab- or comma-separated text, writing `KEY: VALUE` metadata lines so files
+//! round-trip cleanly. [`SpectrumFile::write_tsv`] and
+//! [`SpectrumFile::write_csv`] write directly to a file path.
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -303,6 +380,12 @@ use thiserror::Error;
 
 #[cfg(feature = "spectrashop")]
 mod spectrashop;
+
+#[cfg(feature = "csv")]
+mod csv_text;
+
+mod resample;
+pub use resample::ResampleMethod;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Error type
@@ -1193,6 +1276,63 @@ impl SpectrumFile {
     /// See [`SpectrumFile::from_spectrashop_path`] for format details.
     pub fn from_spectrashop_str(input: &str) -> Result<Self> {
         spectrashop::ss_parse(input, None)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSV / TSV importer and exporter
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[cfg(feature = "csv")]
+impl SpectrumFile {
+    /// Load a CSV or TSV spectral data file from a path.
+    ///
+    /// The delimiter (tab or comma) is auto-detected. An optional header block
+    /// of `KEY: VALUE` lines precedes the data. The first row whose first cell
+    /// parses as a number starts the data block; the immediately preceding
+    /// non-blank line (if non-numeric) is treated as the column-header row.
+    /// First data column = wavelength in nm; each subsequent column becomes one
+    /// [`SpectrumRecord`]. Returns [`SpectrumFile::Single`] for one data column
+    /// or [`SpectrumFile::Batch`] for multiple.
+    pub fn from_csv_path<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let path = path.as_ref();
+        let raw = std::fs::read_to_string(path)?;
+        let filename = path.file_name().and_then(|f| f.to_str());
+        csv_text::csv_parse(&raw, filename)
+    }
+
+    /// Parse a CSV or TSV spectral data string.
+    ///
+    /// See [`SpectrumFile::from_csv_path`] for format details.
+    pub fn from_csv_str(input: &str) -> Result<Self> {
+        csv_text::csv_parse(input, None)
+    }
+
+    /// Serialise to a tab-separated string.
+    ///
+    /// Writes a `KEY: VALUE` metadata header derived from the first spectrum,
+    /// followed by a column-header row and one data row per wavelength point.
+    /// For a batch file all spectra are written as parallel columns sharing the
+    /// wavelength axis of the first spectrum.
+    pub fn to_tsv(&self) -> String {
+        csv_text::csv_write(self, '\t')
+    }
+
+    /// Serialise to a comma-separated string.
+    ///
+    /// See [`SpectrumFile::to_tsv`] for format details.
+    pub fn to_csv(&self) -> String {
+        csv_text::csv_write(self, ',')
+    }
+
+    /// Write a tab-separated file to the given path.
+    pub fn write_tsv<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        Ok(std::fs::write(path, self.to_tsv())?)
+    }
+
+    /// Write a comma-separated file to the given path.
+    pub fn write_csv<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        Ok(std::fs::write(path, self.to_csv())?)
     }
 }
 

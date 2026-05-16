@@ -11,10 +11,18 @@ pipelines, and applications.
 The format captures everything a downstream calculation needs in one place:
 the measured spectrum, the physical conditions under which it was taken
 (instrument, geometry, illuminant, observer), and an optional provenance trail.
-The crate also ships an importer for the
-[SpectraShop](https://www.chromaxion.com/) tab-separated text format, which
-holds the [Chromaxion Spectral Library](https://www.chromaxion.com/spectral-library.php) —
-one of the largest freely available collections of measured spectra.
+The crate also ships support for additional formats:
+
+- **CSV / TSV** (`csv` feature) — generic delimited text with an optional
+  `KEY: VALUE` metadata header block; import via [`SpectrumFile::from_csv_path`]
+  / [`SpectrumFile::from_csv_str`], export via [`SpectrumFile::to_tsv`] /
+  [`SpectrumFile::to_csv`].
+- **SpectraShop** (`spectrashop` feature) — the tab-separated
+  text format used to distribute the
+  [Chromaxion Spectral Library](https://www.chromaxion.com/spectral-library.php),
+  one of the largest freely available collections of measured spectra; import
+  via [`SpectrumFile::from_spectrashop_path`] /
+  [`SpectrumFile::from_spectrashop_str`].
 
 ### Quick start
 
@@ -30,7 +38,19 @@ for sp in file.spectra() {
 }
 ```
 
-#### Importing a SpectraShop file
+#### Importing from other formats
+
+- CSV / TSV (`csv` feature):
+
+```rust
+use spectral_io::SpectrumFile;
+
+let file = SpectrumFile::from_csv_path("measurements.tsv")
+    .expect("could not parse file");
+let tsv = file.to_tsv();
+```
+
+- SpectraShop (`spectrashop` feature):
 
 ```rust
 use spectral_io::SpectrumFile;
@@ -38,6 +58,22 @@ use spectral_io::SpectrumFile;
 let file = SpectrumFile::from_spectrashop_path("Munsell Matte 1994.txt")
     .expect("could not parse SpectraShop file");
 println!("{} spectra imported", file.spectra().len());
+```
+
+#### Resampling to an equidistant grid
+
+```rust
+use spectral_io::{SpectrumFile, ResampleMethod, WavelengthAxis, WavelengthRange};
+
+let file = SpectrumFile::from_path("spectrum.json").unwrap();
+let target = WavelengthAxis {
+    range_nm: Some(WavelengthRange { start: 380.0, end: 780.0, interval: 10.0 }),
+    values_nm: None,
+};
+for sp in file.spectra() {
+    let resampled = sp.resample(&target, ResampleMethod::Linear);
+    println!("{}: {} points", resampled.id, resampled.n_points());
+}
 ```
 
 #### Serialising back to JSON
@@ -53,7 +89,8 @@ std::fs::write("output.json", json).unwrap();
 
 | Feature | Default | Description |
 |---|---|---|
-| `spectrashop` | yes | Enables [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`] |
+| `spectrashop` | no | Enables [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`] |
+| `csv` | no | Enables [`SpectrumFile::from_csv_path`], [`SpectrumFile::from_csv_str`], [`SpectrumFile::to_tsv`], [`SpectrumFile::to_csv`], [`SpectrumFile::write_tsv`], and [`SpectrumFile::write_csv`] |
 
 ### Error handling
 
@@ -263,7 +300,7 @@ which contains measured reflectance, transmittance, and irradiance spectra for
 hundreds of real-world materials — paint colours, Munsell chips, colour charts,
 photographic filters, monitor primaries, fabrics, inks, and more.
 
-Requires the `spectrashop` feature (enabled by default).
+Requires the `spectrashop` feature.
 [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`]
 parse the format and convert each data record in the `BEGIN_DATA`/`END_DATA`
 block into a [`SpectrumRecord`]. File-level metadata (spectrum type, illuminant,
@@ -295,6 +332,43 @@ are subject to the following terms:
 
 All data © Robin D. Myers, all rights reserved worldwide.
 Contact <robin@rmimaging.com> for commercial licensing enquiries.
+
+### Importing and exporting CSV / TSV files
+
+Requires the `csv` feature.
+
+[`SpectrumFile::from_csv_path`] and [`SpectrumFile::from_csv_str`] read a
+generic delimited text file. The delimiter (tab or comma) is auto-detected.
+Files have two sections:
+
+1. **Header block** — zero or more `KEY: VALUE` metadata lines (or
+   `KEY = VALUE`; or `KEY<delim>VALUE` for a set of recognised keywords).
+   Lines starting with `#` and blank lines are ignored throughout.
+
+2. **Data block** — the first row whose first cell parses as a number
+   (wavelength in nm) starts the data block. The immediately preceding
+   non-blank line (if non-numeric) is the optional column-header row.
+   First column = wavelength; each further column becomes one
+   [`SpectrumRecord`].
+
+A file with one data column returns [`SpectrumFile::Single`]; two or more
+return [`SpectrumFile::Batch`].
+
+```text
+Measurement_Type: reflectance
+Date: 2026-05-15
+Illuminant: D65
+
+wavelength_nm    patch_A    patch_B
+380    0.041    0.089
+390    0.052    0.092
+400    0.063    0.095
+```
+
+[`SpectrumFile::to_tsv`] and [`SpectrumFile::to_csv`] serialise back to
+tab- or comma-separated text, writing `KEY: VALUE` metadata lines so files
+round-trip cleanly. [`SpectrumFile::write_tsv`] and
+[`SpectrumFile::write_csv`] write directly to a file path.
 
 <!-- cargo-rdme end -->
 
