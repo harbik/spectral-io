@@ -22,6 +22,12 @@ pub enum ResampleMethod {
     /// for any output wavelength whose window contains no input samples.
     ///
     /// Most appropriate when downsampling to a coarser grid (e.g. 1 nm → 10 nm).
+    ///
+    /// **Assumes a regular (uniformly-spaced) target grid.** The window
+    /// half-width is derived from the mean spacing of the entire target axis;
+    /// for irregular target grids the bins may overlap or leave gaps.  Use a
+    /// `WavelengthAxis` with `range_nm` (start / end / interval) to guarantee
+    /// a regular grid.
     BoxcarAverage,
 }
 
@@ -31,6 +37,20 @@ impl SpectrumRecord {
     /// The source spectrum's metadata, colour-science block, and provenance are
     /// preserved; a [`ProcessingStep`] describing the operation is appended to
     /// the provenance trail.
+    ///
+    /// # Preconditions
+    ///
+    /// The source wavelength axis must be sorted in ascending order.
+    /// `WavelengthAxis` values produced by this library always satisfy this
+    /// requirement; an unsorted axis will produce silently incorrect output.
+    ///
+    /// # Uncertainty
+    ///
+    /// Any `uncertainty` values on the source spectrum are **not** carried
+    /// forward — the returned `SpectralData` always has `uncertainty: None`.
+    /// Correct propagation of uncertainty through interpolation and averaging
+    /// requires knowledge of the correlation structure of the input errors and
+    /// is left to the caller.
     pub fn resample(&self, target: &WavelengthAxis, method: ResampleMethod) -> Self {
         let input_wls = self.wavelength_axis.wavelengths_nm();
         let input_vals = &self.spectral_data.values;
