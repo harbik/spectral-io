@@ -88,6 +88,11 @@ pub(super) fn csv_parse(input: &str, source_file: Option<&str>) -> Result<Spectr
             "CSV/TSV: at least 2 wavelength rows are required".into(),
         ));
     }
+    if !wavelengths.windows(2).all(|w| w[0] < w[1]) {
+        return Err(SpectrumFileError::SchemaValidation(
+            "CSV/TSV: wavelength values must be strictly increasing".into(),
+        ));
+    }
     if columns.is_empty() {
         return Err(SpectrumFileError::SchemaValidation(
             "CSV/TSV: no spectral data columns found (need at least 2 columns)".into(),
@@ -157,6 +162,10 @@ pub(super) fn csv_write(file: &SpectrumFile, delimiter: char) -> String {
     // Data rows.
     let wavelengths = first.wavelength_axis.wavelengths_nm();
     let all_values: Vec<&Vec<f64>> = spectra.iter().map(|sp| &sp.spectral_data.values).collect();
+    debug_assert!(
+        all_values.iter().all(|v| v.len() == wavelengths.len()),
+        "csv_write: all spectra must have the same number of values as the wavelength axis"
+    );
     for (i, wl) in wavelengths.iter().enumerate() {
         let mut row = format!("{wl}");
         for vals in &all_values {
@@ -190,10 +199,33 @@ fn first_field(line: &str, delimiter: char) -> &str {
     line.split(delimiter).next().unwrap_or("").trim()
 }
 
+// RFC4180-aware splitter: handles double-quote–enclosed fields and "" escapes.
 fn split_fields(line: &str, delimiter: char) -> Vec<String> {
-    line.split(delimiter)
-        .map(|f| f.trim().to_string())
-        .collect()
+    let mut fields = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut chars = line.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match (in_quotes, c) {
+            (true, '"') => {
+                if chars.peek() == Some(&'"') {
+                    chars.next();
+                    current.push('"');
+                } else {
+                    in_quotes = false;
+                }
+            }
+            (false, '"') => in_quotes = true,
+            (false, c) if c == delimiter => {
+                fields.push(current.trim().to_string());
+                current.clear();
+            }
+            (_, c) => current.push(c),
+        }
+    }
+    fields.push(current.trim().to_string());
+    fields
 }
 
 // Try to extract a KEY: VALUE or KEY = VALUE or known-keyword delimiter-kv pair.
@@ -1030,6 +1062,39 @@ mod tests {
         );
         let file2 = csv_parse(&tsv, None).unwrap();
         assert!(file2.spectra()[0].metadata.custom.is_none());
+    }
+
+    // ── quoted field round-trip ───────────────────────────────────────────────
+
+    #[test]
+    fn quoted_id_round_trips_through_csv() {
+        // Build a file with an ID containing a comma; export as CSV; re-import.
+        // csv_write quotes the ID; split_fields must unquote it on re-parse.
+        let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
+            wavelength_nm,patch A,patch B\n380,0.1,0.2\n390,0.3,0.4\n";
+        let mut file = csv_parse(input, None).unwrap();
+        // Inject a comma into one ID so quoting is triggered.
+        match &mut file {
+            SpectrumFile::Batch { spectra, .. } => spectra[0].id = "red,green".to_string(),
+            _ => panic!("expected Batch"),
+        }
+        let csv = csv_write(&file, ',');
+        assert!(
+            csv.contains("\"red,green\""),
+            "ID should be quoted in output"
+        );
+        let file2 = csv_parse(&csv, None).unwrap();
+        assert_eq!(file2.spectra()[0].id, "red,green");
+        assert_eq!(file2.spectra()[1].id, "patch B");
+    }
+
+    // ── non-increasing wavelengths rejected ───────────────────────────────────
+
+    #[test]
+    fn error_on_non_increasing_wavelengths() {
+        let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
+            wavelength_nm\ts\n400\t0.1\n390\t0.2\n380\t0.3\n";
+        assert!(csv_parse(input, None).is_err());
     }
 
     // ── source_file propagated into provenance ────────────────────────────────

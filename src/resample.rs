@@ -151,6 +151,7 @@ impl SpectrumRecord {
 // ─────────────────────────────────────────────────────────────────────────────
 
 fn linear_interp(wls: &[f64], vals: &[f64], target: f64) -> f64 {
+    debug_assert!(!wls.is_empty() && wls.len() == vals.len());
     let i = wls.partition_point(|&w| w < target);
     match i {
         0 => vals[0],
