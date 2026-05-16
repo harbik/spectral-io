@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `SpectrumRecord::resample(target, method)` — resample a spectrum onto a new
   wavelength axis using `ResampleMethod::Linear` (linear interpolation, with
-  clamping at the range boundaries) or `ResampleMethod::BoxcarAverage`
+  clamping at the range boundaries), `ResampleMethod::BoxcarAverage`
   (rectangular-window averaging; falls back to linear interpolation for output
-  bins that contain no input samples). A provenance `ProcessingStep` is
-  appended automatically.
+  bins that contain no input samples), or `ResampleMethod::Gaussian`
+  (Gaussian-kernel weighted average; FWHM taken from
+  `metadata.measurement_conditions.spectral_resolution_nm` when present,
+  otherwise the mean step size of the target axis). A provenance
+  `ProcessingStep` is appended automatically.
 
 ## [0.3.0] - 2026-05-15
 

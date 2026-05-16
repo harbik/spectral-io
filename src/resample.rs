@@ -29,6 +29,30 @@ pub enum ResampleMethod {
     /// `WavelengthAxis` with `range_nm` (start / end / interval) to guarantee
     /// a regular grid.
     BoxcarAverage,
+
+    /// Gaussian kernel resampling.
+    ///
+    /// Each output value is a weighted average of the input samples, where the
+    /// weight of input sample at `w` is `exp(−½ ((w − λ) / σ)²)`.  Samples
+    /// further than 3σ from the output wavelength are excluded.  Weights are
+    /// normalised by their sum, so output values at the edges of the input
+    /// range are not artificially attenuated.
+    ///
+    /// The kernel FWHM is resolved in this order:
+    ///
+    /// 1. `metadata.measurement_conditions.spectral_resolution_nm` — the
+    ///    instrument's optical resolution, physically the most meaningful
+    ///    choice.
+    /// 2. Mean step size of the target axis — used as a fallback when no
+    ///    resolution is recorded, matching the kernel width to the output
+    ///    sampling interval.
+    ///
+    /// σ is derived from the FWHM as `FWHM / (2√(2 ln 2)) ≈ FWHM / 2.355`.
+    ///
+    /// If the FWHM is much smaller than the input sampling interval the kernel
+    /// degenerates toward nearest-neighbour interpolation; if no input samples
+    /// fall within the 3σ window the method falls back to linear interpolation.
+    Gaussian,
 }
 
 impl SpectrumRecord {
@@ -56,21 +80,43 @@ impl SpectrumRecord {
         let input_vals = &self.spectral_data.values;
         let target_wls = target.wavelengths_nm();
 
-        let values: Vec<f64> = match method {
-            ResampleMethod::Linear => target_wls
-                .iter()
-                .map(|&wl| linear_interp(&input_wls, input_vals, wl))
-                .collect(),
-            ResampleMethod::BoxcarAverage => {
-                let half_step = mean_half_step(&target_wls);
+        let (values, fwhm_used): (Vec<f64>, Option<f64>) = match method {
+            ResampleMethod::Linear => (
                 target_wls
                     .iter()
-                    .map(|&wl| boxcar_avg(&input_wls, input_vals, wl, half_step))
-                    .collect()
+                    .map(|&wl| linear_interp(&input_wls, input_vals, wl))
+                    .collect(),
+                None,
+            ),
+            ResampleMethod::BoxcarAverage => {
+                let half_step = mean_half_step(&target_wls);
+                (
+                    target_wls
+                        .iter()
+                        .map(|&wl| boxcar_avg(&input_wls, input_vals, wl, half_step))
+                        .collect(),
+                    None,
+                )
+            }
+            ResampleMethod::Gaussian => {
+                let fwhm = self
+                    .metadata
+                    .measurement_conditions
+                    .as_ref()
+                    .and_then(|mc| mc.spectral_resolution_nm)
+                    .unwrap_or_else(|| mean_half_step(&target_wls) * 2.0);
+                let sigma = fwhm / (8.0_f64 * 2.0_f64.ln()).sqrt();
+                (
+                    target_wls
+                        .iter()
+                        .map(|&wl| gaussian_avg(&input_wls, input_vals, wl, sigma))
+                        .collect(),
+                    Some(fwhm),
+                )
             }
         };
 
-        let step = provenance_step(&target_wls, method);
+        let step = provenance_step(&target_wls, method, fwhm_used);
         let provenance = Some(match self.provenance.clone() {
             Some(mut p) => {
                 let steps = p.processing_steps.get_or_insert_with(Vec::new);
@@ -134,6 +180,25 @@ fn boxcar_avg(wls: &[f64], vals: &[f64], target: f64, half_step: f64) -> f64 {
     }
 }
 
+fn gaussian_avg(wls: &[f64], vals: &[f64], target: f64, sigma: f64) -> f64 {
+    let cutoff = 3.0 * sigma;
+    let mut weight_sum = 0.0_f64;
+    let mut value_sum = 0.0_f64;
+    for (&w, &v) in wls.iter().zip(vals.iter()) {
+        let d = w - target;
+        if d.abs() <= cutoff {
+            let weight = (-0.5 * (d / sigma) * (d / sigma)).exp();
+            value_sum += weight * v;
+            weight_sum += weight;
+        }
+    }
+    if weight_sum > 0.0 {
+        value_sum / weight_sum
+    } else {
+        linear_interp(wls, vals, target)
+    }
+}
+
 // Mean half-step: (last − first) / (2 × (n − 1)).
 // For a regular grid this is exactly interval / 2.
 fn mean_half_step(wls: &[f64]) -> f64 {
@@ -143,18 +208,27 @@ fn mean_half_step(wls: &[f64]) -> f64 {
     (wls.last().unwrap() - wls[0]) / (2.0 * (wls.len() - 1) as f64)
 }
 
-fn provenance_step(target_wls: &[f64], method: ResampleMethod) -> ProcessingStep {
+fn provenance_step(
+    target_wls: &[f64],
+    method: ResampleMethod,
+    fwhm_nm: Option<f64>,
+) -> ProcessingStep {
     let method_name = match method {
         ResampleMethod::Linear => "linear interpolation",
         ResampleMethod::BoxcarAverage => "boxcar average",
+        ResampleMethod::Gaussian => "Gaussian",
     };
     let n = target_wls.len();
     let desc = if n >= 2 {
-        format!(
+        let base = format!(
             "{method_name} to {n} points, {:.4}–{:.4} nm",
             target_wls[0],
             target_wls[n - 1]
-        )
+        );
+        match fwhm_nm {
+            Some(fwhm) => format!("{base}, FWHM {fwhm:.4} nm"),
+            None => base,
+        }
     } else {
         format!("{method_name} to {n} point(s)")
     };
@@ -361,5 +435,79 @@ mod tests {
         assert_eq!(out.metadata.title.as_deref(), Some("My Sample"));
         assert_eq!(out.spectral_data.scale.as_deref(), Some("fractional"));
         assert_eq!(out.id, "test");
+    }
+
+    // ── Gaussian ──────────────────────────────────────────────────────────────
+
+    #[test]
+    fn gaussian_constant_spectrum() {
+        // A constant input must remain constant regardless of kernel width.
+        let wls: Vec<f64> = (0..=20).map(|i| 380.0 + i as f64).collect();
+        let vals = vec![0.5_f64; wls.len()];
+        let sp = make_record(&wls, &vals);
+        let target = regular_target(380.0, 400.0, 5.0);
+        let out = sp.resample(&target, ResampleMethod::Gaussian);
+        for &v in &out.spectral_data.values {
+            assert!((v - 0.5).abs() < 1e-12, "got {v}");
+        }
+    }
+
+    #[test]
+    fn gaussian_uses_spectral_resolution_nm() {
+        // spectral_resolution_nm = 5.0 → FWHM 5.0 nm appears in provenance.
+        let mut sp = make_record(&[380.0, 390.0, 400.0], &[0.1, 0.2, 0.3]);
+        sp.metadata.measurement_conditions = Some(MeasurementConditions {
+            spectral_resolution_nm: Some(5.0),
+            integration_time_ms: None,
+            averaging: None,
+            temperature_celsius: None,
+            geometry: None,
+            specular_component: None,
+            measurement_aperture_mm: None,
+            measurement_filter: None,
+        });
+        let target = regular_target(380.0, 400.0, 5.0);
+        let out = sp.resample(&target, ResampleMethod::Gaussian);
+        let desc = out
+            .provenance
+            .unwrap()
+            .processing_steps
+            .unwrap()
+            .remove(0)
+            .description;
+        assert!(desc.contains("Gaussian"), "{desc}");
+        assert!(desc.contains("5.0000"), "{desc}");
+    }
+
+    #[test]
+    fn gaussian_fallback_fwhm_equals_target_step() {
+        // No spectral_resolution_nm → FWHM falls back to mean target step (5.0 nm).
+        let sp = make_record(&[380.0, 390.0, 400.0], &[0.1, 0.2, 0.3]);
+        let target = regular_target(380.0, 400.0, 5.0);
+        let out = sp.resample(&target, ResampleMethod::Gaussian);
+        let desc = out
+            .provenance
+            .unwrap()
+            .processing_steps
+            .unwrap()
+            .remove(0)
+            .description;
+        assert!(desc.contains("5.0000"), "{desc}");
+    }
+
+    #[test]
+    fn gaussian_normalized_at_boundary() {
+        // Constant input: output at the very edges of the range must equal the
+        // constant (normalization by weight sum, not by a fixed count).
+        let wls: Vec<f64> = (0..=20).map(|i| 380.0 + i as f64).collect();
+        let vals = vec![0.7_f64; wls.len()];
+        let sp = make_record(&wls, &vals);
+        // Target extends slightly beyond input range — edge bins have fewer
+        // contributing input samples but weights still sum to 1.
+        let target = regular_target(378.0, 402.0, 2.0);
+        let out = sp.resample(&target, ResampleMethod::Gaussian);
+        for &v in &out.spectral_data.values {
+            assert!((v - 0.7).abs() < 1e-12, "got {v}");
+        }
     }
 }
