@@ -915,6 +915,7 @@ const ALLOWED_MEASUREMENT_TYPES: &[&str] = &[
     "radiance",
     "irradiance",
     "emission",
+    "sensitivity",
 ];
 
 const ALLOWED_ILLUMINANTS: &[&str] = &[

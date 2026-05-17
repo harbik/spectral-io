@@ -38,10 +38,31 @@
 //! curl -O https://files.cie.co.at/CIE_srf_CQS_5nm.csv
 //! curl -O https://files.cie.co.at/CIE_srf_FCI_5nm.csv
 //! curl -O https://files.cie.co.at/CIE_srf_PS_5nm.csv
+//! # Spectral sensitivity / response functions
+//! curl -O https://files.cie.co.at/CIE_xyz_1931_2deg.csv
+//! curl -O https://files.cie.co.at/CIE_xyz_1964_10deg.csv
+//! curl -O https://files.cie.co.at/CIE_lms_cf_2deg.csv
+//! curl -O https://files.cie.co.at/CIE_lms_cf_10deg.csv
+//! curl -O "https://files.cie.co.at/CIE_a-opic_action_spectra.csv"
+//! curl -O https://files.cie.co.at/CIE_cfb_stv_2deg.csv
+//! curl -O https://files.cie.co.at/CIE_cfb_stv_10deg.csv
+//! curl -O https://files.cie.co.at/CIE_cfb_sle_2deg.csv
+//! curl -O https://files.cie.co.at/CIE_cfb_sle_10deg.csv
+//! curl -O https://files.cie.co.at/CIE_sle_photopic.csv
+//! curl -O https://files.cie.co.at/CIE_sle_scotopic.csv
+//! curl -O https://files.cie.co.at/CIE_RefSpectrum_L41.csv
+//! curl -O https://files.cie.co.at/CIE_1st_deriv_meta_ind.csv
 //! ```
 
-use spectral_io::SpectrumFile;
-use std::{env, fs, path::PathBuf, process};
+use spectral_io::{
+    BatchMetadata, MeasurementType, Provenance, SpectralData, SpectrumFile, SpectrumMetadata,
+    SpectrumRecord, WavelengthAxis, WavelengthRange,
+};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+    process,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dataset catalogue
@@ -304,12 +325,381 @@ fn datasets() -> Vec<Dataset> {
             doi: "10.25039/CIE.DS.7chm7z5h",
             columns: vec!["beta_15".into()],
         },
+        // ── Colour matching functions ─────────────────────────────────────────
+        Dataset {
+            csv_file: "CIE_xyz_1931_2deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_cmf_1931_2deg.json",
+            title: "CIE 1931 Colour-Matching Functions, 2° Observer",
+            mtype: "sensitivity",
+            date: "2019-01-01",
+            source: "ISO/CIE 11664-1:2019 Colorimetry — Part 1: CIE Standard Colorimetric Observers, Annex A",
+            doi: "10.25039/CIE.DS.xvudnb9b",
+            columns: vec!["x_bar".into(), "y_bar".into(), "z_bar".into()],
+        },
+        Dataset {
+            csv_file: "CIE_xyz_1964_10deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_cmf_1964_10deg.json",
+            title: "CIE 1964 Colour-Matching Functions, 10° Observer",
+            mtype: "sensitivity",
+            date: "2019-01-01",
+            source: "ISO/CIE 11664-1:2019 Colorimetry — Part 1: CIE Standard Colorimetric Observers, Annex B",
+            doi: "10.25039/CIE.DS.sqksu2n5",
+            columns: vec!["x_bar_10".into(), "y_bar_10".into(), "z_bar_10".into()],
+        },
+        // ── LMS cone fundamentals ─────────────────────────────────────────────
+        Dataset {
+            csv_file: "CIE_lms_cf_2deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_lms_cone_fundamentals_2deg.json",
+            title: "CIE 2006 LMS Cone Fundamentals, 2° Field Size",
+            mtype: "sensitivity",
+            date: "2006-01-01",
+            source: "CIE 170-1:2006 Fundamental Chromaticity Diagram with Physiological Axes — Part 1, Table 2",
+            doi: "10.25039/CIE.DS.tijidesg",
+            columns: vec!["l_bar".into(), "m_bar".into(), "s_bar".into()],
+        },
+        Dataset {
+            csv_file: "CIE_lms_cf_10deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_lms_cone_fundamentals_10deg.json",
+            title: "CIE 2006 LMS Cone Fundamentals, 10° Field Size",
+            mtype: "sensitivity",
+            date: "2006-01-01",
+            source: "CIE 170-1:2006 Fundamental Chromaticity Diagram with Physiological Axes — Part 1, Table 3",
+            doi: "10.25039/CIE.DS.nxsqeri8",
+            columns: vec!["l_bar_10".into(), "m_bar_10".into(), "s_bar_10".into()],
+        },
+        // Alpha-opic action spectra handled separately (each photoreceptor has
+        // its own valid wavelength range; see convert_alpha_opic below).
+        // ── Cone-fundamental-based functions ─────────────────────────────────
+        Dataset {
+            csv_file: "CIE_cfb_stv_2deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_cfb_xyz_2deg.json",
+            title: "CIE Cone-Fundamental-Based Spectral Tristimulus Values, 2° Field Size",
+            mtype: "sensitivity",
+            date: "2015-01-01",
+            source: "CIE 170-2:2015 Fundamental Chromaticity Diagram with Physiological Axes — Part 2, Table 1",
+            doi: "10.25039/CIE.DS.548rw69q",
+            columns: vec!["x_F".into(), "y_F".into(), "z_F".into()],
+        },
+        Dataset {
+            csv_file: "CIE_cfb_stv_10deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_cfb_xyz_10deg.json",
+            title: "CIE Cone-Fundamental-Based Spectral Tristimulus Values, 10° Field Size",
+            mtype: "sensitivity",
+            date: "2015-01-01",
+            source: "CIE 170-2:2015 Fundamental Chromaticity Diagram with Physiological Axes — Part 2, Table 3",
+            doi: "10.25039/CIE.DS.dm6qiig7",
+            columns: vec!["x_F10".into(), "y_F10".into(), "z_F10".into()],
+        },
+        Dataset {
+            csv_file: "CIE_cfb_sle_2deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_cfb_luminous_efficiency_2deg.json",
+            title: "CIE Cone-Fundamental-Based Spectral Luminous Efficiency, 2° Field Size",
+            mtype: "sensitivity",
+            date: "2015-01-01",
+            source: "CIE 170-2:2015 Fundamental Chromaticity Diagram with Physiological Axes — Part 2, Table 2",
+            doi: "10.25039/CIE.DS.pyqkh5rw",
+            columns: vec!["V_F".into()],
+        },
+        Dataset {
+            csv_file: "CIE_cfb_sle_10deg.csv",
+            subdir: "sensitivity",
+            json_file: "cie_cfb_luminous_efficiency_10deg.json",
+            title: "CIE Cone-Fundamental-Based Spectral Luminous Efficiency, 10° Field Size",
+            mtype: "sensitivity",
+            date: "2015-01-01",
+            source: "CIE 170-2:2015 Fundamental Chromaticity Diagram with Physiological Axes — Part 2, Table 4",
+            doi: "10.25039/CIE.DS.8mrru44q",
+            columns: vec!["V_F10".into()],
+        },
+        // ── Luminous efficiency functions ─────────────────────────────────────
+        Dataset {
+            csv_file: "CIE_sle_photopic.csv",
+            subdir: "sensitivity",
+            json_file: "cie_luminous_efficiency_photopic.json",
+            title: "CIE Spectral Luminous Efficiency for Photopic Vision V(λ)",
+            mtype: "sensitivity",
+            date: "2019-01-01",
+            source: "ISO/CIE 11664-1:2019 Colorimetry — Part 1: CIE Standard Colorimetric Observers, Table 1",
+            doi: "10.25039/CIE.DS.dktna2s3",
+            columns: vec!["V".into()],
+        },
+        Dataset {
+            csv_file: "CIE_sle_scotopic.csv",
+            subdir: "sensitivity",
+            json_file: "cie_luminous_efficiency_scotopic.json",
+            title: "CIE Spectral Luminous Efficiency for Scotopic Vision V′(λ)",
+            mtype: "sensitivity",
+            date: "2019-01-01",
+            source: "ISO/CIE 11664-1:2019 Colorimetry — Part 1: CIE Standard Colorimetric Observers, Table 2",
+            doi: "10.25039/CIE.DS.gr6w4b5g",
+            columns: vec!["V_prime".into()],
+        },
+        // ── Reference spectrum ────────────────────────────────────────────────
+        Dataset {
+            csv_file: "CIE_RefSpectrum_L41.csv",
+            subdir: "illuminants",
+            json_file: "cie_reference_spectrum_l41.json",
+            title: "CIE Reference Spectrum L41",
+            mtype: "irradiance",
+            date: "2023-01-01",
+            source: "CIE 251:2023 CIE L41 Spectral Power Distribution, Table 1",
+            doi: "10.25039/CIE.DS.van56dfj",
+            columns: vec!["L41".into()],
+        },
+        // ── Metamerism index deviation function ───────────────────────────────
+        Dataset {
+            csv_file: "CIE_1st_deriv_meta_ind.csv",
+            subdir: "sensitivity",
+            json_file: "cie_metamerism_index_1st_deviation.json",
+            title: "CIE First Deviation Function for Special Metamerism Index (Change in Observer)",
+            mtype: "sensitivity",
+            date: "2018-01-01",
+            source: "CIE 015:2018 Colorimetry, 4th Edition, Table A.4",
+            doi: "10.25039/CIE.DS.caky9gj2",
+            columns: vec!["f1".into(), "f2".into(), "f3".into()],
+        },
     ]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Alpha-opic special case
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Each CIE alpha-opic photoreceptor action spectrum is defined over its own
+// valid wavelength range (s_sc only up to ~615 nm; the others extend to 780 nm).
+// Storing all five in one batch with a shared wavelength axis would force a
+// common range and lose data, so we parse the raw CSV column-by-column and
+// build each SpectrumRecord with its own WavelengthAxis.
+fn convert_alpha_opic(input_dir: &Path, output_dir: &Path) -> bool {
+    let csv_path = input_dir.join("CIE_a-opic_action_spectra.csv");
+    if !csv_path.exists() {
+        eprintln!("  SKIP  CIE_a-opic_action_spectra.csv (file not found)");
+        return false;
+    }
+    let raw = match fs::read_to_string(&csv_path) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("  ERROR reading CIE_a-opic_action_spectra.csv: {e}");
+            return false;
+        }
+    };
+
+    let ids = ["s_sc", "s_mc", "s_lc", "s_rh", "s_mel"];
+    let mut col_points: [Vec<(f64, f64)>; 5] = Default::default();
+
+    for line in raw.lines() {
+        let line = line.trim_end_matches('\r');
+        let fields: Vec<&str> = line.split(',').collect();
+        if fields.len() < 6 {
+            continue;
+        }
+        let Ok(wl) = fields[0]
+            .trim()
+            .trim_start_matches('\u{FEFF}')
+            .parse::<f64>()
+        else {
+            continue;
+        };
+        for (i, col) in col_points.iter_mut().enumerate() {
+            let v_str = fields[i + 1].trim();
+            if v_str.eq_ignore_ascii_case("NaN") {
+                continue;
+            }
+            if let Ok(v) = v_str.parse::<f64>() {
+                col.push((wl, v));
+            }
+        }
+    }
+
+    let copyright = "© International Commission on Illumination (CIE). \
+                     Licensed CC BY-SA 4.0. https://cie.co.at/data-tables";
+    let notes = "Source: CIE S026/E:2018 CIE System for Metrology of Optical Radiation \
+                 for ipRGC-Influenced Responses to Light, Table 2. \
+                 DOI: https://doi.org/10.25039/CIE.DS.vqqhzp5a";
+
+    let spectra: Vec<SpectrumRecord> = ids
+        .iter()
+        .zip(col_points.iter())
+        .map(|(id, pts)| {
+            let wavelengths: Vec<f64> = pts.iter().map(|(w, _)| *w).collect();
+            let values: Vec<f64> = pts.iter().map(|(_, v)| *v).collect();
+            let wavelength_axis = if wavelengths.len() >= 2 {
+                let start = wavelengths[0];
+                let end = *wavelengths.last().unwrap();
+                let interval = wavelengths[1] - wavelengths[0];
+                let uniform = wavelengths
+                    .windows(2)
+                    .all(|w| (w[1] - w[0] - interval).abs() < 1e-6);
+                if uniform {
+                    WavelengthAxis {
+                        values_nm: None,
+                        range_nm: Some(WavelengthRange {
+                            start,
+                            end,
+                            interval,
+                        }),
+                    }
+                } else {
+                    WavelengthAxis {
+                        values_nm: Some(wavelengths),
+                        range_nm: None,
+                    }
+                }
+            } else {
+                WavelengthAxis {
+                    values_nm: Some(wavelengths),
+                    range_nm: None,
+                }
+            };
+            SpectrumRecord {
+                id: id.to_string(),
+                metadata: SpectrumMetadata {
+                    measurement_type: MeasurementType::Sensitivity,
+                    date: "2018-01-01".to_string(),
+                    title: Some(
+                        "CIE Alpha-Opic Action Spectra \
+                             (S-cone, M-cone, L-cone, Rod, Melanopsin)"
+                            .to_string(),
+                    ),
+                    copyright: Some(copyright.to_string()),
+                    description: None,
+                    sample_id: None,
+                    time: None,
+                    operator: None,
+                    instrument: None,
+                    measurement_conditions: None,
+                    surface: None,
+                    sample_backing: None,
+                    tags: None,
+                    custom: None,
+                },
+                wavelength_axis,
+                spectral_data: SpectralData {
+                    values,
+                    uncertainty: None,
+                    scale: None,
+                },
+                provenance: Some(Provenance {
+                    source_file: Some(
+                        "https://files.cie.co.at/CIE_a-opic_action_spectra.csv".to_string(),
+                    ),
+                    source_format: Some("CIE CSV".to_string()),
+                    notes: Some(notes.to_string()),
+                    software: None,
+                    software_version: None,
+                    processing_steps: None,
+                }),
+                color_science: None,
+            }
+        })
+        .collect();
+
+    let file = SpectrumFile::Batch {
+        schema_version: "1.0.0".to_string(),
+        batch_metadata: Some(Box::new(BatchMetadata {
+            title: Some(
+                "CIE Alpha-Opic Action Spectra (S-cone, M-cone, L-cone, Rod, Melanopsin)"
+                    .to_string(),
+            ),
+            description: None,
+            operator: None,
+            date: None,
+            instrument: None,
+            measurement_conditions: None,
+        })),
+        spectra,
+    };
+
+    let out_dir = output_dir.join("sensitivity");
+    if let Err(e) = fs::create_dir_all(&out_dir) {
+        eprintln!("  ERROR creating {}: {e}", out_dir.display());
+        return false;
+    }
+    let out_path = out_dir.join("cie_alpha_opic_action_spectra.json");
+    let json = match serde_json::to_string_pretty(&file) {
+        Ok(j) => j,
+        Err(e) => {
+            eprintln!("  ERROR serialising cie_alpha_opic_action_spectra.json: {e}");
+            return false;
+        }
+    };
+    match fs::write(&out_path, json) {
+        Ok(()) => {
+            eprintln!(
+                "  OK    CIE_a-opic_action_spectra.csv → {} (5 spectra)",
+                out_path.display()
+            );
+            true
+        }
+        Err(e) => {
+            eprintln!("  ERROR writing {}: {e}", out_path.display());
+            false
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Conversion helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Remove NaN entries from every spectrum in `file`, rebuilding each affected
+/// spectrum's WavelengthAxis to cover only the valid (non-NaN) positions.
+/// CIE CSVs sometimes use NaN to indicate that a function is not defined over
+/// part of the wavelength range (e.g. z̄₁₀ above 559 nm, s̄ above 619 nm).
+fn strip_nan_entries(file: &mut SpectrumFile) {
+    let strip = |sp: &mut SpectrumRecord| {
+        if !sp.spectral_data.values.iter().any(|v: &f64| v.is_nan()) {
+            return;
+        }
+        let wls = sp.wavelength_axis.wavelengths_nm();
+        let pairs: Vec<(f64, f64)> = wls
+            .iter()
+            .cloned()
+            .zip(sp.spectral_data.values.iter().cloned())
+            .filter(|(_, v)| !v.is_nan())
+            .collect();
+        if pairs.len() < 2 {
+            return;
+        }
+        let wavelengths: Vec<f64> = pairs.iter().map(|(w, _)| *w).collect();
+        let values: Vec<f64> = pairs.iter().map(|(_, v)| *v).collect();
+        let interval = wavelengths[1] - wavelengths[0];
+        let uniform = wavelengths
+            .windows(2)
+            .all(|w| (w[1] - w[0] - interval).abs() < 1e-6);
+        sp.wavelength_axis = if uniform {
+            WavelengthAxis {
+                range_nm: Some(WavelengthRange {
+                    start: wavelengths[0],
+                    end: *wavelengths.last().unwrap(),
+                    interval,
+                }),
+                values_nm: None,
+            }
+        } else {
+            WavelengthAxis {
+                values_nm: Some(wavelengths),
+                range_nm: None,
+            }
+        };
+        sp.spectral_data.values = values;
+    };
+    match file {
+        SpectrumFile::Single { spectrum, .. } => strip(spectrum),
+        SpectrumFile::Batch { spectra, .. } => {
+            for sp in spectra.iter_mut() {
+                strip(sp);
+            }
+        }
+    }
+}
 
 /// Count how many data columns (after the wavelength column) are in the first
 /// data row of a raw CIE CSV. Used to trim the column-name list to the actual
@@ -459,6 +849,7 @@ fn main() {
             }
         };
 
+        strip_nan_entries(&mut file);
         set_provenance(&mut file, ds.csv_file);
 
         let out_dir = output_dir.join(ds.subdir);
@@ -497,6 +888,15 @@ fn main() {
             }
         );
         ok += 1;
+    }
+
+    // Alpha-opic handled separately (per-column wavelength ranges)
+    if convert_alpha_opic(&input_dir, &output_dir) {
+        ok += 1;
+    } else if !input_dir.join("CIE_a-opic_action_spectra.csv").exists() {
+        skipped += 1;
+    } else {
+        failed += 1;
     }
 
     eprintln!();
