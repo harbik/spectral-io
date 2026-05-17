@@ -416,7 +416,7 @@ fn main() {
             continue;
         }
 
-        let raw = match fs::read_to_string(&csv_path) {
+        let raw_owned = match fs::read_to_string(&csv_path) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!("  ERROR reading {}: {e}", ds.csv_file);
@@ -424,8 +424,13 @@ fn main() {
                 continue;
             }
         };
+        // Strip a UTF-8 BOM that some CIE files carry; if left in place it
+        // ends up in the middle of the synthetic header + raw concatenation
+        // where csv_parse's own BOM strip (which only fires at position 0)
+        // cannot reach it.
+        let raw = raw_owned.strip_prefix('\u{FEFF}').unwrap_or(&raw_owned);
 
-        let n_cols = count_data_cols(&raw);
+        let n_cols = count_data_cols(raw);
         if n_cols == 0 {
             eprintln!("  ERROR {}: no data rows found", ds.csv_file);
             failed += 1;

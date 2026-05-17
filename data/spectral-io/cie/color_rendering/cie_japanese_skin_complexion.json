@@ -2,7 +2,7 @@
   "file_type": "single",
   "schema_version": "1.0.0",
   "spectrum": {
-    "id": "0.131",
+    "id": "beta_15",
     "metadata": {
       "measurement_type": "reflectance",
       "date": "2018-01-01",
@@ -11,13 +11,14 @@
     },
     "wavelength_axis": {
       "range_nm": {
-        "start": 385.0,
+        "start": 380.0,
         "end": 780.0,
         "interval": 5.0
       }
     },
     "spectral_data": {
       "values": [
+        0.131,
         0.139,
         0.147,
         0.153,

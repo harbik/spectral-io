@@ -3,7 +3,7 @@
   "schema_version": "1.0.0",
   "spectra": [
     {
-      "id": "0.053",
+      "id": "VS1",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -12,13 +12,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.053,
           0.0507,
           0.0505,
           0.0502,
@@ -108,7 +109,7 @@
       }
     },
     {
-      "id": "0.0829",
+      "id": "VS2",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -117,13 +118,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0829,
           0.0829,
           0.0866,
           0.0888,
@@ -213,7 +215,7 @@
       }
     },
     {
-      "id": "0.0582",
+      "id": "VS3",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -222,13 +224,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0582,
           0.0572,
           0.0559,
           0.0568,
@@ -318,7 +321,7 @@
       }
     },
     {
-      "id": "0.0449",
+      "id": "VS4",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -327,13 +330,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0449,
           0.0431,
           0.0366,
           0.0368,
@@ -423,7 +427,7 @@
       }
     },
     {
-      "id": "0.0643",
+      "id": "VS5",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -432,13 +436,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0643,
           0.0661,
           0.0702,
           0.0672,
@@ -528,7 +533,7 @@
       }
     },
     {
-      "id": "0.0652",
+      "id": "VS6",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -537,13 +542,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0652,
           0.0657,
           0.0667,
           0.0691,
@@ -633,7 +639,7 @@
       }
     },
     {
-      "id": "0.0726",
+      "id": "VS7",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -642,13 +648,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0726,
           0.076,
           0.0789,
           0.0844,
@@ -738,7 +745,7 @@
       }
     },
     {
-      "id": "0.0872",
+      "id": "VS8",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -747,13 +754,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0872,
           0.1001,
           0.1159,
           0.1339,
@@ -843,7 +851,7 @@
       }
     },
     {
-      "id": "0.1167",
+      "id": "VS9",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -852,13 +860,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.1167,
           0.1352,
           0.1674,
           0.2024,
@@ -948,7 +957,7 @@
       }
     },
     {
-      "id": "0.079",
+      "id": "VS10",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -957,13 +966,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.079,
           0.0984,
           0.1242,
           0.1595,
@@ -1053,7 +1063,7 @@
       }
     },
     {
-      "id": "0.0692",
+      "id": "VS11",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -1062,13 +1072,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0692,
           0.0846,
           0.105,
           0.1345,
@@ -1158,7 +1169,7 @@
       }
     },
     {
-      "id": "0.0941",
+      "id": "VS12",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -1167,13 +1178,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.0941,
           0.1164,
           0.1467,
           0.1852,
@@ -1263,7 +1275,7 @@
       }
     },
     {
-      "id": "0.1272",
+      "id": "VS13",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -1272,13 +1284,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.1272,
           0.1612,
           0.2101,
           0.284,
@@ -1368,7 +1381,7 @@
       }
     },
     {
-      "id": "0.1155",
+      "id": "VS14",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -1377,13 +1390,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.1155,
           0.144,
           0.1918,
           0.2577,
@@ -1473,7 +1487,7 @@
       }
     },
     {
-      "id": "0.1069",
+      "id": "VS15",
       "metadata": {
         "measurement_type": "reflectance",
         "date": "2024-01-01",
@@ -1482,13 +1496,14 @@
       },
       "wavelength_axis": {
         "range_nm": {
-          "start": 385.0,
+          "start": 380.0,
           "end": 780.0,
           "interval": 5.0
         }
       },
       "spectral_data": {
         "values": [
+          0.1069,
           0.1246,
           0.1455,
           0.1623,
