@@ -9,23 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `data/spectral-io/cie/` — 20 CIE spectral data files converted from the
-  [CIE data tables](https://cie.co.at/data-tables) (CC BY-SA 4.0):
-  - **Illuminants** (`illuminants/`): Standard A, D50, D65, C, D55, D75;
-    HP1–HP5 discharge lamps; FL1–FL12 and FL3.1–FL3.15 fluorescent lamps at
-    5 nm and 1 nm; LED-B1–B5, BH1, RGB1, V1–V2 at 5 nm and 1 nm;
-    indoor daylight ID50 and ID65; daylight spectral components S0, S1, S2.
-  - **Colour rendering test samples** (`color_rendering/`): 14 CRI test colour
-    samples (CIE 13.3:1995); 99 CFI test colour samples at 5 nm and 1 nm
-    (CIE 224:2017); 15 CQS test colour samples (CIE 253:2024); four-colour
-    combination RYGB; Japanese skin complexion sample β₁₅.
 - `examples/cie_csv_to_json` (`csv` feature) — converter that reads the raw
   CIE CSV files from `data/cie-raw/`, prepends rich metadata headers, parses
-  with `SpectrumFile::from_csv_str`, and writes JSON to
-  `data/spectral-io/cie/`.  Includes download instructions for the source files.
+  with `SpectrumFile::from_csv_str`, and writes JSON.  The 20 converted CIE
+  data files (illuminants and colour rendering test samples, CC BY-SA 4.0)
+  are published in the
+  [spectral-data](https://github.com/harbik/spectral-data) repository under
+  `spectra/cie/`.  Includes download instructions for the source files.
 - `tests/cie_data.rs` (`csv` feature) — integration tests: schema validation,
   CSV round-trip (JSON → `to_csv` → `from_csv_str`), and spot-checks on
   known values for D65, the CRI 14 samples, and the FL/LED batch files.
+  Tests skip gracefully when the data directory is absent.
 
 ## [0.3.0] - 2026-05-16
 
