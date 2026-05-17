@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `MeasurementType::Sensitivity` — new variant for dimensionless spectral
+  sensitivity and response functions: colour matching functions, cone
+  fundamentals, luminous efficiency V(λ), alpha-opic action spectra.
+  Values are not constrained to [0, 1].
 - `examples/cie_csv_to_json` (`csv` feature) — converter that reads the raw
   CIE CSV files from `data/cie-raw/`, prepends rich metadata headers, parses
   with `SpectrumFile::from_csv_str`, and writes JSON.  The 20 converted CIE

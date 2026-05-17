@@ -560,6 +560,8 @@ fn parse_measurement_type(s: &str) -> MeasurementType {
         MeasurementType::Radiance
     } else if lower.contains("emission") || lower.contains("emissive") {
         MeasurementType::Emission
+    } else if lower.contains("sensitiv") || lower.contains("response") {
+        MeasurementType::Sensitivity
     } else {
         MeasurementType::Reflectance
     }
@@ -583,6 +585,7 @@ fn measurement_type_str(mt: MeasurementType) -> &'static str {
         MeasurementType::Radiance => "radiance",
         MeasurementType::Irradiance => "irradiance",
         MeasurementType::Emission => "emission",
+        MeasurementType::Sensitivity => "sensitivity",
     }
 }
 

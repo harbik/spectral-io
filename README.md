@@ -158,7 +158,7 @@ strongly encouraged for reproducibility.
 
 | Field | Type | Notes |
 |---|---|---|
-| `measurement_type` | string enum | `reflectance`, `transmittance`, `absorbance`, `radiance`, `irradiance`, `emission` |
+| `measurement_type` | string enum | `reflectance`, `transmittance`, `absorbance`, `radiance`, `irradiance`, `emission`, `sensitivity` |
 | `date` | string | ISO 8601 date (`YYYY-MM-DD`) |
 | `title` | string | optional human-readable name for the sample |
 | `sample_id` | string | optional machine-readable sample identifier |
