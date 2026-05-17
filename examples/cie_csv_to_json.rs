@@ -8,6 +8,9 @@
 //!
 //! Reads raw CIE CSV files from `--input` (default `data/cie-raw/`) and writes
 //! JSON files to `--output` (default `data/spectral-io/cie/`).
+//! The generated files are published in the
+//! [spectral-data](https://github.com/harbik/spectral-data) repository under
+//! `spectra/cie/`; they are not committed to this repo.
 //!
 //! # Obtaining the source files
 //!
@@ -332,6 +335,14 @@ fn build_header(ds: &Dataset, n_data_cols: usize) -> String {
         .map(String::as_str)
         .take(n_data_cols)
         .collect();
+    if col_names.len() < n_data_cols {
+        eprintln!(
+            "  WARN  {}: CSV has {n_data_cols} data columns but only {} names defined \
+             — extra columns will receive auto-generated ids",
+            ds.csv_file,
+            col_names.len()
+        );
+    }
     let col_row = format!("wavelength_nm,{}", col_names.join(","));
 
     format!(

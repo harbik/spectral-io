@@ -1,8 +1,10 @@
-//! Integration tests for the CIE spectral data files in `data/spectral-io/cie/`.
+//! Integration tests for the CIE spectral data files.
 //!
-//! Each test guards with an early return when the generated files are absent so
-//! that CI passes even without the pre-built data directory.  To regenerate the
-//! files run:
+//! The CIE JSON files are published in the
+//! [spectral-data](https://github.com/harbik/spectral-data) repository and are
+//! **not** committed to this repo.  Each test guards with an early return when
+//! the local data directory is absent, so CI for `spectral-io` always passes.
+//! To run these tests locally, generate the files first:
 //!
 //! ```sh
 //! cargo run --example cie_csv_to_json --features csv
@@ -43,7 +45,8 @@ fn all_cie_json_files_are_valid() {
     if !dir.exists() {
         eprintln!(
             "SKIP all_cie_json_files_are_valid: {} not present \
-             (run `cargo run --example cie_csv_to_json --features csv` first)",
+             (CIE data lives in harbik/spectral-data; run \
+             `cargo run --example cie_csv_to_json --features csv` to generate locally)",
             dir.display()
         );
         return;
@@ -129,7 +132,7 @@ fn round_trip(path: &Path) {
 fn round_trip_single_spectrum_illuminants() {
     let dir = cie_dir().join("illuminants");
     if !dir.exists() {
-        eprintln!("SKIP round_trip_single_spectrum_illuminants: data not present");
+        eprintln!("SKIP round_trip_single_spectrum_illuminants: CIE data not present locally (see harbik/spectral-data)");
         return;
     }
     for name in &[
@@ -153,7 +156,7 @@ fn round_trip_single_spectrum_illuminants() {
 fn round_trip_batch_illuminants() {
     let dir = cie_dir().join("illuminants");
     if !dir.exists() {
-        eprintln!("SKIP round_trip_batch_illuminants: data not present");
+        eprintln!("SKIP round_trip_batch_illuminants: CIE data not present locally (see harbik/spectral-data)");
         return;
     }
     for name in &[
@@ -173,7 +176,7 @@ fn round_trip_batch_illuminants() {
 fn round_trip_color_rendering_samples() {
     let dir = cie_dir().join("color_rendering");
     if !dir.exists() {
-        eprintln!("SKIP round_trip_color_rendering_samples: data not present");
+        eprintln!("SKIP round_trip_color_rendering_samples: CIE data not present locally (see harbik/spectral-data)");
         return;
     }
     for name in &[
@@ -197,7 +200,7 @@ fn round_trip_color_rendering_samples() {
 fn d65_spot_check() {
     let path = cie_dir().join("illuminants/cie_std_illum_d65.json");
     if !path.exists() {
-        eprintln!("SKIP d65_spot_check: data not present");
+        eprintln!("SKIP d65_spot_check: CIE data not present locally (see harbik/spectral-data)");
         return;
     }
     let file = SpectrumFile::from_path(&path).unwrap();
@@ -225,7 +228,9 @@ fn d65_spot_check() {
 fn cri_14_spot_check() {
     let path = cie_dir().join("color_rendering/cie_cri_14_test_samples.json");
     if !path.exists() {
-        eprintln!("SKIP cri_14_spot_check: data not present");
+        eprintln!(
+            "SKIP cri_14_spot_check: CIE data not present locally (see harbik/spectral-data)"
+        );
         return;
     }
     let file = SpectrumFile::from_path(&path).unwrap();
@@ -249,7 +254,9 @@ fn cri_14_spot_check() {
 fn fl_batch_spot_check() {
     let path = cie_dir().join("illuminants/cie_illum_fl_lamps_5nm.json");
     if !path.exists() {
-        eprintln!("SKIP fl_batch_spot_check: data not present");
+        eprintln!(
+            "SKIP fl_batch_spot_check: CIE data not present locally (see harbik/spectral-data)"
+        );
         return;
     }
     let file = SpectrumFile::from_path(&path).unwrap();
@@ -265,7 +272,9 @@ fn fl_batch_spot_check() {
 fn led_batch_spot_check() {
     let path = cie_dir().join("illuminants/cie_illum_led_lamps_5nm.json");
     if !path.exists() {
-        eprintln!("SKIP led_batch_spot_check: data not present");
+        eprintln!(
+            "SKIP led_batch_spot_check: CIE data not present locally (see harbik/spectral-data)"
+        );
         return;
     }
     let file = SpectrumFile::from_path(&path).unwrap();
