@@ -623,7 +623,13 @@ fn convert_alpha_opic(input_dir: &Path, output_dir: &Path) -> bool {
         return false;
     }
     let out_path = out_dir.join("cie_alpha_opic_action_spectra.json");
-    let json = serde_json::to_string_pretty(&file).unwrap();
+    let json = match serde_json::to_string_pretty(&file) {
+        Ok(j) => j,
+        Err(e) => {
+            eprintln!("  ERROR serialising cie_alpha_opic_action_spectra.json: {e}");
+            return false;
+        }
+    };
     match fs::write(&out_path, json) {
         Ok(()) => {
             eprintln!(
@@ -659,7 +665,7 @@ fn strip_nan_entries(file: &mut SpectrumFile) {
             .zip(sp.spectral_data.values.iter().cloned())
             .filter(|(_, v)| !v.is_nan())
             .collect();
-        if pairs.is_empty() {
+        if pairs.len() < 2 {
             return;
         }
         let wavelengths: Vec<f64> = pairs.iter().map(|(w, _)| *w).collect();
