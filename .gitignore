@@ -1,5 +1,6 @@
 /target
 **/.DS_Store
+/data/cie-raw/
 **/tmp
 /data/spectrashop/**
 !/data/spectrashop/monitors/

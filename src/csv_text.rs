@@ -52,6 +52,9 @@ const KNOWN_META_KEYS: &[&str] = &[
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub(super) fn csv_parse(input: &str, source_file: Option<&str>) -> Result<SpectrumFile> {
+    // Strip a leading UTF-8 BOM (U+FEFF) produced by some tools (e.g. Excel,
+    // Windows Notepad) so the first data line is parsed correctly.
+    let input = input.strip_prefix('\u{FEFF}').unwrap_or(input);
     let meaningful: Vec<&str> = input
         .lines()
         .filter(|l| {
@@ -1095,6 +1098,32 @@ mod tests {
         let input = "Date: 2026-05-15\nMeasurement_Type: reflectance\n\
             wavelength_nm\ts\n400\t0.1\n390\t0.2\n380\t0.3\n";
         assert!(csv_parse(input, None).is_err());
+    }
+
+    // ── UTF-8 BOM stripped ───────────────────────────────────────────────────
+
+    #[test]
+    fn bom_prefix_is_stripped() {
+        // A file starting with a UTF-8 BOM should parse identically to one without.
+        let without_bom = "Measurement_Type: reflectance\nDate: 2026-05-15\n\
+            wavelength_nm\ts\n380\t0.1\n390\t0.2\n";
+        let with_bom = format!("\u{FEFF}{without_bom}");
+        let f1 = csv_parse(without_bom, None).unwrap();
+        let f2 = csv_parse(&with_bom, None).unwrap();
+        assert_eq!(f1.spectra()[0].id, f2.spectra()[0].id);
+        assert_eq!(f1.spectra()[0].points(), f2.spectra()[0].points());
+    }
+
+    #[test]
+    fn bom_on_first_data_row_does_not_corrupt_ids() {
+        // The column-header row we inject before a BOM-prefixed CSV must win
+        // over the first data row when determining spectrum IDs.
+        let bom_csv = "\u{FEFF}wavelength_nm,A,B\n380,0.1,0.2\n390,0.3,0.4\n";
+        let file = csv_parse(bom_csv, None).unwrap();
+        let spectra = file.spectra();
+        assert_eq!(spectra.len(), 2);
+        assert_eq!(spectra[0].id, "A");
+        assert_eq!(spectra[1].id, "B");
     }
 
     // ── source_file propagated into provenance ────────────────────────────────

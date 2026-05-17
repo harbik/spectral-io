@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `examples/cie_csv_to_json` (`csv` feature) — converter that reads the raw
+  CIE CSV files from `data/cie-raw/`, prepends rich metadata headers, parses
+  with `SpectrumFile::from_csv_str`, and writes JSON.  The 20 converted CIE
+  data files (illuminants and colour rendering test samples, CC BY-SA 4.0)
+  are published in the
+  [spectral-data](https://github.com/harbik/spectral-data) repository under
+  `spectra/cie/`.  Includes download instructions for the source files.
+- `tests/cie_data.rs` (`csv` feature) — integration tests: schema validation,
+  CSV round-trip (JSON → `to_csv` → `from_csv_str`), and spot-checks on
+  known values for D65, the CRI 14 samples, and the FL/LED batch files.
+  Tests skip gracefully when the data directory is absent.
+
 ## [0.3.0] - 2026-05-16
 
 ### Added
