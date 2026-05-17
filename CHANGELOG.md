@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `python` feature — builds a [maturin](https://github.com/PyO3/maturin)
+  Python extension module (`spectral_io`) via PyO3. Exposes `load(path)` and
+  `load_json(json)` to load spectral files, and `SpectrumFile.to_numpy(start,
+  end, interval, method="linear")` to resample onto an equidistant grid and
+  return a `(wavelengths, data)` tuple of NumPy arrays. `data` is 1-D for
+  single-spectrum files and 2-D (`n_wavelengths × n_spectra`, column per
+  spectrum) for batch files. `method` accepts `"linear"`, `"boxcar_average"`,
+  or `"gaussian"`.
+
 ## [0.4.0] - 2026-05-17
 
 ### Added
