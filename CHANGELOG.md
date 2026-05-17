@@ -7,19 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-17
+
 ### Added
 
 - `MeasurementType::Sensitivity` — new variant for dimensionless spectral
   sensitivity and response functions: colour matching functions, cone
   fundamentals, luminous efficiency V(λ), alpha-opic action spectra.
   Values are not constrained to [0, 1].
-- `examples/cie_csv_to_json` (`csv` feature) — converter that reads the raw
-  CIE CSV files from `data/cie-raw/`, prepends rich metadata headers, parses
-  with `SpectrumFile::from_csv_str`, and writes JSON.  The 20 converted CIE
-  data files (illuminants and colour rendering test samples, CC BY-SA 4.0)
-  are published in the
+- `examples/cie_csv_to_json` (`csv` feature) — converter extended with 13
+  additional CIE sensitivity/response datasets (CMFs, LMS cone fundamentals,
+  alpha-opic action spectra, CFB XYZ and luminous efficiency, photopic and
+  scotopic V(λ), metamerism indices, reference spectrum L41).  Per-column
+  NaN stripping (`strip_nan_entries`) gives each column its own
+  `WavelengthAxis` where CIE marks undefined regions as NaN (e.g. z̄₁₀ above
+  559 nm, s̄ above 615 nm).  Dedicated `convert_alpha_opic` path handles the
+  S-cone's dual NaN gap.  All 33 converted CIE files (CC BY-SA 4.0) are
+  published in the
   [spectral-data](https://github.com/harbik/spectral-data) repository under
-  `spectra/cie/`.  Includes download instructions for the source files.
+  `spectra/cie/`.  Includes download instructions for all source files.
 - `tests/cie_data.rs` (`csv` feature) — integration tests: schema validation,
   CSV round-trip (JSON → `to_csv` → `from_csv_str`), and spot-checks on
   known values for D65, the CRI 14 samples, and the FL/LED batch files.
@@ -82,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blocks, `NOTE`/`ACQUIRE_NOTE` provenance, measurement filter preservation,
   `SAMPLE_ID3` and unknown fields in `custom`, European decimal aperture format.
 
+[0.4.0]: https://github.com/harbik/spectral-io/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/harbik/spectral-io/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/harbik/spectral-io/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/harbik/spectral-io/releases/tag/v0.1.0
