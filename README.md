@@ -100,6 +100,7 @@ std::fs::write("output.json", json).unwrap();
 |---|---|---|
 | `spectrashop` | no | Enables [`SpectrumFile::from_spectrashop_path`] and [`SpectrumFile::from_spectrashop_str`] |
 | `csv` | no | Enables [`SpectrumFile::from_csv_path`], [`SpectrumFile::from_csv_str`], [`SpectrumFile::to_tsv`], [`SpectrumFile::to_csv`], [`SpectrumFile::write_tsv`], and [`SpectrumFile::write_csv`] |
+| `python` | no | Builds a [maturin](https://github.com/PyO3/maturin) Python extension module (`spectral_io`) exposing `load()`, `load_json()`, and `SpectrumFile.to_numpy()` |
 
 ### Error handling
 
@@ -480,6 +481,84 @@ wavelength_nm,x_bar,y_bar,z_bar
 tab- or comma-separated text, writing `KEY: VALUE` metadata lines so files
 round-trip cleanly. [`SpectrumFile::write_tsv`] and
 [`SpectrumFile::write_csv`] write directly to a file path.
+
+### Python interface (`python` feature)
+
+The `python` feature builds a Python extension module (`spectral_io`) using
+[PyO3](https://pyo3.rs/) and [maturin](https://github.com/PyO3/maturin).
+It gives Python programmers direct access to spectral data as NumPy arrays,
+with no manual parsing or resampling code required.
+
+#### Installation
+
+You need [maturin](https://github.com/PyO3/maturin) and Python ≥ 3.9.
+Install inside a virtual environment:
+
+```text
+python3 -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install maturin numpy
+```
+
+Then build and install the extension in development mode (editable, no wheel):
+
+```text
+maturin develop --features python
+```
+
+Or build a release wheel for distribution or installation elsewhere:
+
+```text
+maturin build --release --features python
+pip install target/wheels/spectral_io-*.whl
+```
+
+#### API
+
+| Function / method | Description |
+|---|---|
+| `spectral_io.load(path)` | Load and validate a JSON file from a path |
+| `spectral_io.load_json(json_str)` | Load and validate from a JSON string |
+| `SpectrumFile.ids` | List of spectrum IDs in file order |
+| `SpectrumFile.to_numpy(start, end, interval, method="linear")` | Resample onto an equidistant grid; returns `(wavelengths, data)` |
+
+`to_numpy` returns a `(wavelengths, data)` tuple of NumPy float64 arrays.
+`wavelengths` is always 1-D with shape `(n,)`. `data` is 1-D `(n,)` for a
+single-spectrum file and 2-D `(n, m)` for a batch file, where column `j`
+corresponds to `ids[j]`. `method` must be one of `"linear"` (default),
+`"boxcar_average"`, or `"gaussian"`.
+
+#### Example
+
+```python
+import spectral_io as sio
+import numpy as np
+
+# ── Single-spectrum file ─────────────────────────────────────────────────
+sf = sio.load("data/spectral-io/cie/illuminants/cie_std_illum_d65.json")
+print(sf.ids)                        # ['D65']
+
+wl, spd = sf.to_numpy(380, 780, 10)  # linear interpolation (default)
+print(wl.shape, spd.shape)           # (41,) (41,)
+print(f"D65 at 560 nm: {spd[18]:.4f}")
+
+# ── Batch file ───────────────────────────────────────────────────────────
+sf2 = sio.load("data/spectral-io/spectrashop/Munsell Matte 1994.json")
+wl, matrix = sf2.to_numpy(380, 780, 10)
+print(wl.shape, matrix.shape)        # (41,) (41, 1269)
+print(sf2.ids[:3])                   # ['5R 4/2', '5R 5/2', '5R 6/2']
+
+# ── Matrix algebra ───────────────────────────────────────────────────────
+# Dot the CIE 1931 colour-matching functions onto the Munsell reflectances.
+cmf_file = sio.load("data/spectral-io/cie/sensitivity/cie_1931_2deg_cmf.json")
+_, cmf = cmf_file.to_numpy(380, 780, 10)   # (41, 3) — x̄, ȳ, z̄ columns
+XYZ = cmf.T @ matrix                        # (3, 1269)
+Y = XYZ[1]                                  # luminance factor for each chip
+
+# ── Boxcar downsampling (1 nm → 10 nm) ──────────────────────────────────
+sf3 = sio.load("high_res_measurement.json")
+wl, data = sf3.to_numpy(380, 780, 10, method="boxcar_average")
+```
 
 <!-- cargo-rdme end -->
 
