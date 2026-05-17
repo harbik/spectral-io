@@ -187,10 +187,18 @@
 //! The `measurement_type` values divide into two groups for validation purposes:
 //! - **Bounded**: `reflectance` and `transmittance` — values must lie in `[0, 1]`
 //!   (`"fractional"` scale) or `[0, 100]` (`"percent"` scale).
-//! - **Unbounded**: `absorbance`, `radiance`, `irradiance`, `emission`, and
-//!   `sensitivity` — no range constraint is applied. `sensitivity` is intended for
-//!   dimensionless spectral response functions: colour matching functions, cone
-//!   fundamentals, luminous efficiency V(λ), and alpha-opic action spectra.
+//! - **Unconstrained**: `absorbance`, `radiance`, `irradiance`, `emission`, and
+//!   `sensitivity` — no range constraint is applied.
+//!
+//! Although steady-state `absorbance` (A = −log₁₀T) is physically ≥ 0, no lower
+//! bound is enforced because differential absorbance (ΔA, as measured in
+//! pump-probe / transient absorption spectroscopy) can be negative, and optical
+//! gain media produce A < 0 by stimulated emission. Similarly, `radiance` and
+//! `irradiance` are non-negative in isolation but can go negative in
+//! noise-corrected or difference measurements. `sensitivity` is intended for
+//! dimensionless spectral response functions — colour matching functions, cone
+//! fundamentals, luminous efficiency V(λ), and alpha-opic action spectra — whose
+//! values are not bounded by any physical limit.
 //!
 //! #### `wavelength_axis` (required)
 //!
