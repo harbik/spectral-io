@@ -643,6 +643,58 @@ fn convert_alpha_opic(input_dir: &Path, output_dir: &Path) -> bool {
 // Conversion helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Remove NaN entries from every spectrum in `file`, rebuilding each affected
+/// spectrum's WavelengthAxis to cover only the valid (non-NaN) positions.
+/// CIE CSVs sometimes use NaN to indicate that a function is not defined over
+/// part of the wavelength range (e.g. z̄₁₀ above 559 nm, s̄ above 619 nm).
+fn strip_nan_entries(file: &mut SpectrumFile) {
+    let strip = |sp: &mut SpectrumRecord| {
+        if !sp.spectral_data.values.iter().any(|v: &f64| v.is_nan()) {
+            return;
+        }
+        let wls = sp.wavelength_axis.wavelengths_nm();
+        let pairs: Vec<(f64, f64)> = wls
+            .iter()
+            .cloned()
+            .zip(sp.spectral_data.values.iter().cloned())
+            .filter(|(_, v)| !v.is_nan())
+            .collect();
+        if pairs.is_empty() {
+            return;
+        }
+        let wavelengths: Vec<f64> = pairs.iter().map(|(w, _)| *w).collect();
+        let values: Vec<f64> = pairs.iter().map(|(_, v)| *v).collect();
+        let interval = wavelengths[1] - wavelengths[0];
+        let uniform = wavelengths
+            .windows(2)
+            .all(|w| (w[1] - w[0] - interval).abs() < 1e-6);
+        sp.wavelength_axis = if uniform {
+            WavelengthAxis {
+                range_nm: Some(WavelengthRange {
+                    start: wavelengths[0],
+                    end: *wavelengths.last().unwrap(),
+                    interval,
+                }),
+                values_nm: None,
+            }
+        } else {
+            WavelengthAxis {
+                values_nm: Some(wavelengths),
+                range_nm: None,
+            }
+        };
+        sp.spectral_data.values = values;
+    };
+    match file {
+        SpectrumFile::Single { spectrum, .. } => strip(spectrum),
+        SpectrumFile::Batch { spectra, .. } => {
+            for sp in spectra.iter_mut() {
+                strip(sp);
+            }
+        }
+    }
+}
+
 /// Count how many data columns (after the wavelength column) are in the first
 /// data row of a raw CIE CSV. Used to trim the column-name list to the actual
 /// width so no extra names are injected.
@@ -791,6 +843,7 @@ fn main() {
             }
         };
 
+        strip_nan_entries(&mut file);
         set_provenance(&mut file, ds.csv_file);
 
         let out_dir = output_dir.join(ds.subdir);
