@@ -162,7 +162,7 @@
 //!
 //! | Field | Type | Notes |
 //! |---|---|---|
-//! | `measurement_type` | string enum | `reflectance`, `transmittance`, `absorbance`, `radiance`, `irradiance`, `emission` |
+//! | `measurement_type` | string enum | `reflectance`, `transmittance`, `absorbance`, `radiance`, `irradiance`, `emission`, `sensitivity` |
 //! | `date` | string | ISO 8601 date (`YYYY-MM-DD`) |
 //! | `title` | string | optional human-readable name for the sample |
 //! | `sample_id` | string | optional machine-readable sample identifier |
@@ -674,6 +674,10 @@ pub enum MeasurementType {
     Radiance,
     Irradiance,
     Emission,
+    /// Dimensionless spectral sensitivity or response function — colour matching
+    /// functions, cone fundamentals, luminous efficiency V(λ), action spectra.
+    /// Values are not constrained to [0, 1].
+    Sensitivity,
 }
 
 /// Minimal instrument identification.
