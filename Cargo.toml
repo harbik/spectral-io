@@ -21,6 +21,10 @@ csv = []
 name = "spectrashop_to_json"
 required-features = ["spectrashop"]
 
+[[example]]
+name = "cie_csv_to_json"
+required-features = ["csv"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
